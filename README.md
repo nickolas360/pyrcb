@@ -7,7 +7,7 @@ To use it, import `pyrcb` and create a class that inherits `IrcBot`. Override
 one or more of the events. (You will most likely want to call `send()` from
 within the events.) Create an instance of your class and call `connect()`,
 `register()`, optionally `join()`, and `listen()` (or `listen_async()` -- see
-below). See `example.py` for an example.
+below). See `examples` for examples.
 
 `IrcBot`'s constructor takes one optional argument, `debug_print`. Setting this
 value to `True` will cause all communication with the IRC server to be printed
