@@ -70,4 +70,6 @@ appropriate. This method is non-blocking and calls the optional function
 `callback` when connection to the IRC server is lost.
 
 `is_alive()`  
-Returns whether or not the IRC bot is connected to the IRC server.
+Returns whether or not the IRC bot is connected to the IRC server. If you need
+infinite loops, use `while bot.is_alive():` instead of `while True:`, so the
+loop will stop when connection to the IRC server is lost.
