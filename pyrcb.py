@@ -88,7 +88,9 @@ class IrcBot(object):
             self.listen()
             if callback:
                 callback()
-        threading.Thread(target=target).start()
+        t = threading.Thread(target=target)
+        t.daemon = True
+        t.start()
 
     def is_alive(self):
         return self.alive

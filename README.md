@@ -67,7 +67,9 @@ blocking and returns when connection to the IRC server is lost.
 `listen_async(callback=None)`  
 Listens for incoming messages on a separate thread, calling events when
 appropriate. This method is non-blocking and calls the optional function
-`callback` when connection to the IRC server is lost.
+`callback` when connection to the IRC server is lost. The thread started by
+this method won't keep the program running, so something else needs to. If
+nothing else does, use `listen()` instead.
 
 `is_alive()`  
 Returns whether or not the IRC bot is connected to the IRC server. If you need
