@@ -26,7 +26,7 @@ class RandomTimeBot(IrcBot):
     # State the time at random intervals.
     def random_loop(self, channel):
         # Use self.is_alive() so the loop stops when the bot loses connection.
-        while self.is_alive()
+        while self.is_alive():
             if random.randint(1, 100) == 1:
                 self.send(channel, str(datetime.utcnow()))
             sleep(10)
