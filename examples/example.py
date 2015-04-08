@@ -29,7 +29,7 @@ def main():
     bot.join("##timebot-test")
 
     # Blocking; will return when connection is lost.
-    bot.listen_async()
+    bot.listen()
     print("Disconnected from server.")
 
 if __name__ == "__main__":
