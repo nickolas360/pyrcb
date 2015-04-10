@@ -75,7 +75,7 @@ class IrcBot(object):
     def send_raw(self, message):
         self._writeline(message)
 
-    def listen(self):
+    def listen(self, async_events=True):
         while True:
             try:
                 line = self._readline()
@@ -84,11 +84,16 @@ class IrcBot(object):
                 return
             if line is None:
                 return
-            self._handle(line)
+            if async_events:
+                t = threading.Thread(target=self._handle, args=[line])
+                t.daemon = True
+                t.start()
+            else:
+                self._handle(line)
 
-    def listen_async(self, callback=None):
+    def listen_async(self, callback=None, async_events=True):
         def target():
-            self.listen()
+            self.listen(async_events)
             if callback:
                 callback()
         t = threading.Thread(target=target)
@@ -149,8 +154,8 @@ class IrcBot(object):
             self.on_kick(nick, split[2], split[3], is_self)
         elif cmd == "PRIVMSG" or cmd == "NOTICE":
             msg = " ".join(split[3:])[1:]
-            target = nick if is_query else split[2]
             is_query = split[2].lower() == self.nickname.lower()
+            target = nick if is_query else split[2]
             event = self.on_message if cmd == "PRIVMSG" else self.on_notice
             event(msg, nick, target, is_query)
         else:

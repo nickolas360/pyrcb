@@ -66,16 +66,19 @@ The same as `send()`, except for notices.
 Sends a raw IRC message (command). Useful if you need to send an IRC message
 not listed above.
 
-`listen()`  
+`listen(async_events=True)`  
 Listens for incoming messages, calling events when appropriate. This method is
-blocking and returns when connection to the IRC server is lost.
+blocking and returns when connection to the IRC server is lost. If
+`async_events` is `True`, events will be called on a separate thread and won't
+block more messages from being received.
 
-`listen_async(callback=None)`  
+`listen_async(callback=None, async_events=True)`  
 Listens for incoming messages on a separate thread, calling events when
 appropriate. This method is non-blocking and calls the optional function
 `callback` when connection to the IRC server is lost. The thread started by
 this method won't keep the program running, so something else needs to. If
-nothing else does, use `listen()` instead.
+nothing else does, use `listen()` instead. `async_events` is the same as in
+`listen()`.
 
 `is_alive()`  
 Returns whether or not the IRC bot is connected to the IRC server. If you need
