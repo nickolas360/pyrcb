@@ -115,6 +115,10 @@ class IrcBot(object):
         # To be overridden
         pass
 
+    def on_notice(self, message, nickname, target, is_query):
+        # To be overridden
+        pass
+
     def on_other(self, message):
         # To be overridden
         pass
@@ -127,24 +131,25 @@ class IrcBot(object):
             self._writeline("PONG {0}".format(split[1]))
             return
 
-        nickname = split[0].split("!")[0].split("@")[0][1:]
-        command = split[1].upper()
-        if command == "MODE":
+        nick = split[0].split("!")[0].split("@")[0][1:]
+        cmd = split[1].upper()
+        if cmd == "MODE":
             self.is_registered = True
-        elif command == "JOIN":
-            self.on_join(nickname, split[2])
-        elif command == "PART":
-            self.on_part(nickname, split[2])
-        elif command == "QUIT":
-            self.on_quit(nickname)
-        elif command == "KICK":
+        elif cmd == "JOIN":
+            self.on_join(nick, split[2])
+        elif cmd == "PART":
+            self.on_part(nick, split[2])
+        elif cmd == "QUIT":
+            self.on_quit(nick)
+        elif cmd == "KICK":
             is_self = split[3].lower() == self.nickname.lower()
-            self.on_kick(nickname, split[2], split[3], is_self)
-        elif command == "PRIVMSG":
-            is_query = split[2].lower() == self.nickname.lower()
-            target = nickname if is_query else split[2]
+            self.on_kick(nick, split[2], split[3], is_self)
+        elif cmd == "PRIVMSG" or cmd == "NOTICE":
             msg = " ".join(split[3:])[1:]
-            self.on_message(msg, nickname, target, is_query)
+            target = nick if is_query else split[2]
+            is_query = split[2].lower() == self.nickname.lower()
+            event = self.on_message if cmd == "PRIVMSG" else self.on_notice
+            event(msg, nick, target, is_query)
         else:
             self.on_other(message)
 

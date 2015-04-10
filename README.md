@@ -28,10 +28,13 @@ Called when a user is kicked. `nickname` is the user who is doing the kicking,
 while `target` is the person who is being kicked. `is_self` specifies whether
 or not this bot is the one being kicked.
 
-`on_message(self, nickname, target, is_query)`  
+`on_message(self, message, nickname, target, is_query)`  
 Called when a message is received. `target` is who/what the bot should reply
 to. If the message is in a channel, `target` is the channel. If the message is
 in a private query, `target` is the other user.
+
+`on_notice(self, message, nickname, target, is_query)`  
+The same as `on_message()`, except for notices.
 
 `on_other(self, message)`  
 Called when a message not listed above is received. The message is passed in
