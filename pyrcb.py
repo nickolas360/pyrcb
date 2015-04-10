@@ -69,6 +69,9 @@ class IrcBot(object):
     def send(self, target, message):
         self._writeline("PRIVMSG {0} :{1}".format(target, message))
 
+    def send_notice(self, target, message):
+        self._writeline("NOTICE {0} :{1}".format(target, message))
+
     def send_raw(self, message):
         self._writeline(message)
 

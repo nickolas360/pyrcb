@@ -59,6 +59,9 @@ Closes connection to the IRC server.
 `send(target, message)`  
 Sends `target` the specified message. `target` can be a channel or user.
 
+`send_notice(target, message)`  
+The same as `send()`, except for notices.
+
 `send_raw(message)`  
 Sends a raw IRC message (command). Useful if you need to send an IRC message
 not listed above.
