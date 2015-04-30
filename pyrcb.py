@@ -15,6 +15,7 @@
 
 from __future__ import print_function
 import socket
+import ssl
 import threading
 
 
@@ -31,10 +32,14 @@ class IrcBot(object):
         self.channels = []
         self.alive = False
 
-    def connect(self, hostname, port):
+    def connect(self, hostname, port, use_ssl=False, ca_certs=None):
         self._cleanup()
         self.hostname = hostname
         self.port = port
+        if use_ssl:
+            reqs = ssl.CERT_REQUIRED if ca_certs else ssl.CERT_NONE
+            self.socket = ssl.wrap_socket(
+                self.socket, cert_reqs=reqs, ca_certs=ca_certs)
         self.socket.connect((hostname, port))
         self.alive = True
 

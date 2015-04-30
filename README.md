@@ -41,8 +41,13 @@ Called when a message not listed above is received. The message is passed in
 raw IRC format.
 
 ### Methods
-`connect(hostname, port)`  
-Connects to the specified `hostname` and `port`.
+`connect(hostname, port, use_ssl=False, ca_certs=None)`  
+Connects to the specified `hostname` and `port`. `use_ssl` specifies whether or
+not an SSL connection should be established. `ca_certs` is an optional path to
+a valid [CA certificates file][1], such as [Mozilla's CA certificates in PEM
+format][2] (from <http://curl.haxx.se/docs/caextract.html>).
+[1]: https://docs.python.org/3.4/library/ssl.html#ca-certificates
+[2]: https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt
 
 `register(nickname)`  
 Sends the IRC server nickname and user information.
