@@ -17,11 +17,11 @@ printed to standard output.
 `on_join(self, nickname, channel)`  
 Called when a user joins a channel.
 
-`on_part(self, nickname, channel)`  
-Called when a user leaves a channel.
+`on_part(self, nickname, channel, message)`  
+Called when a user leaves a channel. `message` is the part message.
 
-`on_quit(self, nickname)`  
-Called when a user quits.
+`on_quit(self, nickname, message)`  
+Called when a user quits. `message` is the quit message.
 
 `on_kick(self, nickname, channel, target, is_self)`  
 Called when a user is kicked. `nickname` is the user doing the kicking, while
@@ -57,11 +57,11 @@ Sends the IRC server nickname and user information.
 `join(channel)`  
 Joins the specified channel.
 
-`part(channel)`  
-Leaves the specified channel.
+`part(channel, message=None)`  
+Leaves the specified channel with the specified part message.
 
-`quit()`  
-Closes connection to the IRC server.
+`quit(message=None)`  
+Closes connection to the IRC server with the specified quit message.
 
 `send(target, message)`  
 Sends `target` the specified message. `target` can be a channel or user.

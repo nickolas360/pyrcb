@@ -56,16 +56,18 @@ class IrcBot(object):
 
     def join(self, channel):
         self.channels.append(channel.lower())
-        self._writeline("JOIN {0}".format(channel))
+        self._writeline("JOIN {0}{1}".format(channel))
 
-    def part(self, channel):
+    def part(self, channel, message=None):
         if channel.lower() in self.channels:
-            self._writeline("PART {0}".format(channel))
+            part_msg = " :" + message if message else ""
+            self._writeline("PART {0}{1}".format(channel, part_msg))
             self.channels.remove(channel.lower())
 
-    def quit(self):
+    def quit(self, message=None):
         try:
-            self._writeline("QUIT")
+            quit_msg = " :" + message if message else ""
+            self._writeline("QUIT", quit_msg)
             self.socket.shutdown(socket.SHUT_RDWR)
         except socket.error:
             pass
@@ -113,11 +115,11 @@ class IrcBot(object):
         # To be overridden
         pass
 
-    def on_part(self, nickname, channel):
+    def on_part(self, nickname, channel, message):
         # To be overridden
         pass
 
-    def on_quit(self, nickname):
+    def on_quit(self, nickname, message):
         # To be overridden
         pass
 
@@ -150,15 +152,15 @@ class IrcBot(object):
             args.append(trailing)
 
         if cmd == "PING":
-            self._writeline("PONG " + args[0])
+            self._writeline("PONG {0}".format(args[0]))
         elif cmd == "MODE":
             self.is_registered = True
         elif cmd == "JOIN":
             self.on_join(nick, args[0])
         elif cmd == "PART":
-            self.on_part(nick, args[0])
+            self.on_part(nick, args[0], args[1])
         elif cmd == "QUIT":
-            self.on_quit(nick)
+            self.on_quit(nick, args[0])
         elif cmd == "KICK":
             is_self = args[1].lower() == self.nickname.lower()
             self.on_kick(nick, args[0], args[1], is_self)
