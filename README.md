@@ -30,17 +30,17 @@ bot is the one being kicked.
 
 `on_message(self, message, nickname, target, is_query)`  
 Called when a message is received. `target` is to whom/what the bot should
-reply If the message is in a channel, `target` is the channel. If the message
+reply. If the message is in a channel, `target` is the channel. If the message
 is in a private query, `target` is the other user.
 
 `on_notice(self, message, nickname, target, is_query)`  
 The same as `on_message()`, except for notices.
 
-`on_other(self, nickname, command, args, trailing)`  
-Called when a message not listed above is received. The parameters correspond
-to the message syntax in [RFC 2182][1]. (The `nickname` parameter is part of
-the prefix; either `nickname` or `servername`.)
-[1]: https://tools.ietf.org/html/rfc2812#section-2.3.1
+`on_other(self, nickname, command, args)`  
+Called when a message not listed above is received. `nickname` is either the
+nickname of the user who sent the message or the server name. `command` is the
+IRC command or numeric reply. `args` is a list of the message's arguments,
+including a trailing argument if present.
 
 ### Methods
 `connect(hostname, port, use_ssl=False, ca_certs=None)`  
