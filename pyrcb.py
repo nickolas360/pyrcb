@@ -32,6 +32,7 @@ class IrcBot(object):
         self.nickname = None
         self.channels = []
         self.alive = False
+        self._names = []
 
     def connect(self, hostname, port, use_ssl=False, ca_certs=None):
         self._cleanup()
@@ -56,7 +57,7 @@ class IrcBot(object):
 
     def join(self, channel):
         self.channels.append(channel.lower())
-        self._writeline("JOIN {0}{1}".format(channel))
+        self._writeline("JOIN {0}".format(channel))
 
     def part(self, channel, message=None):
         if channel.lower() in self.channels:
@@ -67,12 +68,16 @@ class IrcBot(object):
     def quit(self, message=None):
         try:
             quit_msg = " :" + message if message else ""
-            self._writeline("QUIT", quit_msg)
+            self._writeline("QUIT{0}".format(quit_msg))
             self.socket.shutdown(socket.SHUT_RDWR)
         except socket.error:
             pass
         self.socket.close()
         self.alive = False
+
+    def names(self, channel):
+        if not channel.isspace():
+            self._writeline("NAMES {0}".format(channel))
 
     def send(self, target, message):
         self._writeline("PRIVMSG {0} :{1}".format(target, message))
@@ -127,6 +132,10 @@ class IrcBot(object):
         # To be overridden
         pass
 
+    def on_names(self, channel, names):
+        # To be overridden
+        pass
+
     def on_message(self, message, nickname, target, is_query):
         # To be overridden
         pass
@@ -152,7 +161,7 @@ class IrcBot(object):
             args.append(trailing)
 
         if cmd == "PING":
-            self._writeline("PONG {0}".format(args[0]))
+            self._writeline("PONG :{0}".format(args[0]))
         elif cmd == "MODE":
             self.is_registered = True
         elif cmd == "JOIN":
@@ -164,6 +173,13 @@ class IrcBot(object):
         elif cmd == "KICK":
             is_self = args[1].lower() == self.nickname.lower()
             self.on_kick(nick, args[0], args[1], is_self)
+        elif cmd == "353":  # RPL_NAMREPLY
+            names = args[-1].replace("@", "").replace("+", "").split()
+            self._names.append((args[-2], names))
+        elif cmd == "366":  # RPL_ENDOFNAMES
+            for channel, names in self._names:
+                self.on_names(channel, names)
+            self._names = []
         elif cmd == "PRIVMSG" or cmd == "NOTICE":
             is_query = args[0].lower() == self.nickname.lower()
             target = nick if is_query else args[0]

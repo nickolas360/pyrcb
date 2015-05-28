@@ -24,9 +24,13 @@ Called when a user leaves a channel. `message` is the part message.
 Called when a user quits. `message` is the quit message.
 
 `on_kick(self, nickname, channel, target, is_self)`  
-Called when a user is kicked. `nickname` is the user doing the kicking, while
+Called when a user is kicked. `nickname` is the user doing the kicking and
 `target` is the person being kicked. `is_self` specifies whether or not this
 bot is the one being kicked.
+
+`on_names(self, channel, names)`  
+Called when the server sends a list of names for the specified channel. `names`
+is a list of nicknames.
 
 `on_message(self, message, nickname, target, is_query)`  
 Called when a message is received. `target` is to whom/what the bot should
@@ -46,8 +50,8 @@ including a trailing argument if present.
 `connect(hostname, port, use_ssl=False, ca_certs=None)`  
 Connects to the specified `hostname` and `port`. `use_ssl` specifies whether or
 not an SSL connection should be established. `ca_certs` is an optional path to
-a valid [CA certificates file][1], such as [Mozilla's CA certificates in PEM
-format][2], from <http://curl.haxx.se/docs/caextract.html>).
+a valid [CA certificates file][1], such as [Mozilla's CA certificates][2] from
+[curl.haxx.se](curl.haxx.se/docs/caextract.html).
 [1]: https://docs.python.org/3.4/library/ssl.html#ca-certificates
 [2]: https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt
 
@@ -62,6 +66,9 @@ Leaves the specified channel with the specified part message.
 
 `quit(message=None)`  
 Closes connection to the IRC server with the specified quit message.
+
+`names(channel)`  
+Requests a list of names for the current channel.
 
 `send(target, message)`  
 Sends `target` the specified message. `target` can be a channel or user.
@@ -82,10 +89,10 @@ not block additional messages from being received.
 `listen_async(callback=None, async_events=True)`  
 The same as `listen()`, except messages are received on a separate thread. This
 method is non-blocking and calls the optional function `callback` when
-connecion to the IRC server is lost. The thread started by this method will not
-keep the program running, so something else needs to.
+connecion to the IRC server is lost. The thread started by this method is a
+daemon thread and will thus not keep the program running.
 
 `is_alive()`  
 Returns whether or not the IRC bot is connected to the IRC server. If you need
 infinite loops, use `while bot.is_alive():` instead of `while True:`, so the
-loop will stop when connection to the IRC server is lost.
+loop will stop when connection to the server is lost.
