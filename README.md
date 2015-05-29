@@ -9,9 +9,11 @@ within the events.) Create an instance of your class and call `connect()`,
 `register()`, optionally `join()`, and `listen()` (or `listen_async()` — see
 below). See [examples](examples) for examples.
 
-`IrcBot`'s constructor takes one optional parameter, `debug_print`. Setting
-this value to `True` will cause all communication with the IRC server to be
-printed to standard output.
+### Constructor
+`IrcBot(debug_print=False, print_function=print)`  
+Creates a new IRC bot. If `debug_print` is `True`, all communication with the
+IRC server will be sent to `print_function`, which is by default the standard
+`print` function.
 
 ### Events
 `on_join(self, nickname, channel)`  

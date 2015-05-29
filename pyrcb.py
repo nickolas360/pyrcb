@@ -21,18 +21,20 @@ import threading
 
 
 class IrcBot(object):
-    def __init__(self, debug_print=False):
+    def __init__(self, debug_print=False, print_function=print):
+        self.debug_print = debug_print
+        self.print_function = print_function
+
         self._buffer = ""
         self.socket = socket.socket()
         self.hostname = None
         self.port = None
 
-        self.debug_print = debug_print
-        self.is_registered = False
-        self.nickname = None
+        self._names = []
         self.channels = []
         self.alive = False
-        self._names = []
+        self.is_registered = False
+        self.nickname = None
 
     def connect(self, hostname, port, use_ssl=False, ca_certs=None):
         self._cleanup()
@@ -198,13 +200,13 @@ class IrcBot(object):
 
         line, self._buffer = self._buffer.split("\r\n", 1)
         if self.debug_print:
-            print(line)
+            self.print_function(line)
         return line
 
     def _writeline(self, data):
         self.socket.sendall((data + "\r\n").encode("utf8", "ignore"))
         if self.debug_print:
-            print(">>> " + data)
+            self.print_function(">>> " + data)
 
     def _cleanup(self):
         self._buffer = ""
