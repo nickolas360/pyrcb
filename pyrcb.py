@@ -151,8 +151,8 @@ class IrcBot(object):
         pass
 
     def _handle(self, message):
-        match = re.match("(?::([^!@ ]+)[^ ]* )?([^ ]+)"
-                         "((?: [^: ][^ ]*){0,14})(?: :?(.+))?",
+        match = re.match(r"(?::([^!@ ]+)[^ ]* )?([^ ]+)"
+                         r"((?: [^: ][^ ]*){0,14})(?: :?(.+))?",
                          message)
 
         nick = match.group(1)
