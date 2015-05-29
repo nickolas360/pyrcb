@@ -53,7 +53,7 @@ including a trailing argument if present.
 Connects to the specified `hostname` and `port`. `use_ssl` specifies whether or
 not an SSL connection should be established. `ca_certs` is an optional path to
 a valid [CA certificates file][1], such as [Mozilla's CA certificates][2] from
-[curl.haxx.se](curl.haxx.se/docs/caextract.html).
+[curl.haxx.se](http://curl.haxx.se/docs/caextract.html).
 [1]: https://docs.python.org/3.4/library/ssl.html#ca-certificates
 [2]: https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt
 
