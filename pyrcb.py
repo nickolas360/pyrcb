@@ -19,6 +19,8 @@ import socket
 import ssl
 import threading
 
+__version__ = "1.0.0"
+
 
 class IrcBot(object):
     def __init__(self, debug_print=False, print_function=print):
@@ -90,7 +92,7 @@ class IrcBot(object):
     def send_raw(self, message):
         self._writeline(message)
 
-    def listen(self, async_events=True):
+    def listen(self, async_events=False):
         while True:
             try:
                 line = self._readline()
@@ -106,7 +108,7 @@ class IrcBot(object):
             else:
                 self._handle(line)
 
-    def listen_async(self, callback=None, async_events=True):
+    def listen_async(self, callback=None, async_events=False):
         def target():
             self.listen(async_events)
             if callback:

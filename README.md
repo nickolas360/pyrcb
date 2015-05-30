@@ -9,6 +9,10 @@ within the events.) Create an instance of your class and call `connect()`,
 `register()`, optionally `join()`, and `listen()` (or `listen_async()` — see
 below). See [examples](examples) for examples.
 
+##### New in version 1.0.0:
+* `async_events` is now `False` by default. If you need it to be `True`,
+  explicitly set it when calling `listen()` or `listen_async()`.
+
 ### Constructor
 `IrcBot(debug_print=False, print_function=print)`  
 Creates a new IRC bot. If `debug_print` is `True`, all communication with the
@@ -82,13 +86,13 @@ The same as `send()`, except for notices.
 Sends a raw IRC message/command. Useful if you need to send a message not
 listed above.
 
-`listen(async_events=True)`  
+`listen(async_events=False)`  
 Listens for incoming messages, calling events when appropriate. This method is
 blocking and returns when connection to the IRC server is lost. If
 `async_events` is `True`, events will be called on a separate thread and will
 not block additional messages from being received.
 
-`listen_async(callback=None, async_events=True)`  
+`listen_async(callback=None, async_events=False)`  
 The same as `listen()`, except messages are received on a separate thread. This
 method is non-blocking and calls the optional function `callback` when
 connecion to the IRC server is lost. The thread started by this method is a
@@ -102,14 +106,14 @@ loop will stop when connection to the server is lost.
 ### Instance Attributes
 These attributes should (generally) not be modified.
 
-`IrcBot.hostname`  
+`IrcBot().hostname`  
 The hostname of the IRC server.
 
-`IrcBot.port`  
+`IrcBot().port`  
 The port of the IRC server.
 
-`IrcBot.channels`  
+`IrcBot().channels`  
 A list of channels the bot is in.
 
-`IrcBot.nickname`  
+`IrcBot().nickname`  
 The nickname of the bot.
