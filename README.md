@@ -98,3 +98,18 @@ daemon thread and will thus not keep the program running.
 Returns whether or not the IRC bot is connected to the IRC server. If you need
 infinite loops, use `while bot.is_alive():` instead of `while True:`, so the
 loop will stop when connection to the server is lost.
+
+### Instance Attributes
+These attributes should (generally) not be modified.
+
+`IrcBot.hostname`  
+The hostname of the IRC server.
+
+`IrcBot.port`  
+The port of the IRC server.
+
+`IrcBot.channels`  
+A list of channels the bot is in.
+
+`IrcBot.nickname`  
+The nickname of the bot.
