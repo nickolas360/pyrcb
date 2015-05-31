@@ -11,6 +11,10 @@ below).
 
 See [examples](examples) for examples.
 
+##### New in version 1.2.0:
+* A thread pool is now used when `async_events` is `True` for better
+  performance.
+
 ##### New in version 1.1.0:
 * `register()` now raises a `ValueError` if the specified nickname is already
   in use.
