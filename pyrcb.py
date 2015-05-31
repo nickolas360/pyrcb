@@ -14,18 +14,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
+from multiprocessing.pool import ThreadPool
 import re
 import socket
 import ssl
 import threading
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 
 class IrcBot(object):
     def __init__(self, debug_print=False, print_function=print):
         self.debug_print = debug_print
         self.print_function = print_function
+        self.thread_pool = ThreadPool(processes=16)
 
         self._buffer = ""
         self.socket = socket.socket()
@@ -151,9 +153,7 @@ class IrcBot(object):
     def _handle(self, message, async_events=False):
         def async(target, *args):
             if async_events:
-                t = threading.Thread(target=target, args=args)
-                t.daemon = True
-                t.start()
+                self.thread_pool.apply_async(target, args)
             else:
                 target(*args)
 
