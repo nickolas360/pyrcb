@@ -19,7 +19,7 @@ import socket
 import ssl
 import threading
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 
 class IrcBot(object):
@@ -178,9 +178,9 @@ class IrcBot(object):
             self._names.append((args[-2], names))
         elif cmd == "366":  # RPL_ENDOFNAMES
             for channel, names in self._names:
-                async(self.on_names, (channel, names))
+                async(self.on_names, channel, names)
             if not self._names:
-                async(self.on_names, (None, None))
+                async(self.on_names, None, None)
             self._names = []
         elif cmd == "PRIVMSG" or cmd == "NOTICE":
             is_query = args[0].lower() == self.nickname.lower()
@@ -190,7 +190,7 @@ class IrcBot(object):
         else:
             async(self.on_other, nick, cmd, args)
 
-    def _parse(self):
+    def _parse(self, message):
         match = re.match(r"(?::([^!@ ]+)[^ ]* )?([^ ]+)"
                          r"((?: [^: ][^ ]*){0,14})(?: :?(.+))?",
                          message)
