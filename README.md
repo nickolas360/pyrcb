@@ -9,6 +9,12 @@ within the events.) Create an instance of your class and call `connect()`,
 `register()`, optionally `join()`, and `listen()` (or `listen_async()` — see
 below). See [examples](examples) for examples.
 
+##### New in version 1.1.0:
+* `register()` now raises a `ValueError` if the specified nickname is already
+  in use.
+* If the server finds no names in reponse to a names request, `on_names()` will
+  now be called with `channel` and `names` set to `None`.
+
 ##### New in version 1.0.0:
 * `async_events` is now `False` by default. If you need it to be `True`,
   explicitly set it when calling `listen()` or `listen_async()`.
@@ -36,7 +42,8 @@ bot is the one being kicked.
 
 `on_names(self, channel, names)`  
 Called when the server sends a list of names for the specified channel. `names`
-is a list of nicknames.
+is a list of nicknames. If no names were found in reponse to a names request,
+`channel` and `names` will be set to `None`.
 
 `on_message(self, message, nickname, target, is_query)`  
 Called when a message is received. `target` is to whom/what the bot should
@@ -62,7 +69,8 @@ a valid [CA certificates file][1], such as [Mozilla's CA certificates][2] from
 [2]: https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt
 
 `register(nickname)`  
-Sends the IRC server nickname and user information.
+Sends the IRC server nickname and user information. Raises a `ValueError` if
+the specified nickname is already in use.
 
 `join(channel)`  
 Joins the specified channel.

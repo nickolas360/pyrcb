@@ -19,7 +19,7 @@ import socket
 import ssl
 import threading
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 class IrcBot(object):
@@ -171,12 +171,16 @@ class IrcBot(object):
         elif cmd == "KICK":
             is_self = args[1].lower() == self.nickname.lower()
             async(self.on_kick, nick, args[0], args[1], is_self)
+        elif cmd == "433":  # ERR_NICKNAMEINUSE
+            raise ValueError("Nickname is already in use")
         elif cmd == "353":  # RPL_NAMREPLY
             names = args[-1].replace("@", "").replace("+", "").split()
             self._names.append((args[-2], names))
         elif cmd == "366":  # RPL_ENDOFNAMES
             for channel, names in self._names:
-                self.on_names(channel, names)
+                async(self.on_names, (channel, names))
+            if not self._names:
+                async(self.on_names, (None, None))
             self._names = []
         elif cmd == "PRIVMSG" or cmd == "NOTICE":
             is_query = args[0].lower() == self.nickname.lower()
