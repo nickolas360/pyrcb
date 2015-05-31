@@ -6,8 +6,10 @@ compatible with Python 2 and 3.
 To use it, import `pyrcb` and create a class that inherits `IrcBot`. Override
 one or more of the events. (You will most likely want to call `send()` from
 within the events.) Create an instance of your class and call `connect()`,
-`register()`, optionally `join()`, and `listen()` (or `listen_async()` — see
-below). See [examples](examples) for examples.
+`register()`, optionally `join()`, and `listen()` (or `listen_async()`—see
+below).
+
+See [examples](examples) for examples.
 
 ##### New in version 1.1.0:
 * `register()` now raises a `ValueError` if the specified nickname is already
