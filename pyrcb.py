@@ -101,10 +101,6 @@ class IrcBot(object):
                 return
             if line is None:
                 return
-            if async_events:
-                t = threading.Thread(target=self._handle, args=[line])
-                t.daemon = True
-                t.start()
             else:
                 self._handle(line)
 
@@ -152,31 +148,29 @@ class IrcBot(object):
         # To be overridden
         pass
 
-    def _handle(self, message):
-        match = re.match(r"(?::([^!@ ]+)[^ ]* )?([^ ]+)"
-                         r"((?: [^: ][^ ]*){0,14})(?: :?(.+))?",
-                         message)
+    def _handle(self, message, async_events=False):
+        def async(target, *args):
+            if async_events:
+                t = threading.Thread(target=target, args=args)
+                t.daemon = True
+                t.start()
+            else:
+                target(*args)
 
-        nick = match.group(1)
-        cmd = match.group(2)
-        args = (match.group(3) or "").split()
-        trailing = match.group(4)
-        if trailing:
-            args.append(trailing)
-
+        nick, cmd, args = self._parse(message)
         if cmd == "PING":
             self._writeline("PONG :{0}".format(args[0]))
         elif cmd == "MODE":
             self.is_registered = True
         elif cmd == "JOIN":
-            self.on_join(nick, args[0])
+            async(self.on_join, nick, args[0])
         elif cmd == "PART":
-            self.on_part(nick, args[0], args[1])
+            async(self.on_part, nick, args[0], args[1])
         elif cmd == "QUIT":
-            self.on_quit(nick, args[0])
+            async(self.on_quit, nick, args[0])
         elif cmd == "KICK":
             is_self = args[1].lower() == self.nickname.lower()
-            self.on_kick(nick, args[0], args[1], is_self)
+            async(self.on_kick, nick, args[0], args[1], is_self)
         elif cmd == "353":  # RPL_NAMREPLY
             names = args[-1].replace("@", "").replace("+", "").split()
             self._names.append((args[-2], names))
@@ -188,9 +182,20 @@ class IrcBot(object):
             is_query = args[0].lower() == self.nickname.lower()
             target = nick if is_query else args[0]
             event = self.on_message if cmd == "PRIVMSG" else self.on_notice
-            event(args[-1], nick, target, is_query)
+            async(event, args[-1], nick, target, is_query)
         else:
-            self.on_other(nick, cmd, args)
+            async(self.on_other, nick, cmd, args)
+
+    def _parse(self):
+        match = re.match(r"(?::([^!@ ]+)[^ ]* )?([^ ]+)"
+                         r"((?: [^: ][^ ]*){0,14})(?: :?(.+))?",
+                         message)
+
+        nick, cmd, args, trailing = match.groups()
+        args = (args or "").split()
+        if trailing:
+            args.append(trailing)
+        return (nick, cmd, args)
 
     def _readline(self):
         while "\r\n" not in self._buffer:
