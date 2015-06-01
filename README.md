@@ -11,6 +11,9 @@ below).
 
 See [examples](examples) for examples.
 
+##### New in version 1.3.0:
+* Added `nick()` and `on_nick()` functions.
+
 ##### New in version 1.2.0:
 * A thread pool is now used when `async_events` is `True` for better
   performance.
@@ -20,10 +23,6 @@ See [examples](examples) for examples.
   in use.
 * If the server finds no names in reponse to a names request, `on_names()` will
   now be called with `channel` and `names` set to `None`.
-
-##### New in version 1.0.0:
-* `async_events` is now `False` by default. If you need it to be `True`,
-  explicitly set it when calling `listen()` or `listen_async()`.
 
 ### Constructor
 `IrcBot(debug_print=False, print_function=print)`  
@@ -45,6 +44,10 @@ Called when a user quits. `message` is the quit message.
 Called when a user is kicked. `nickname` is the user doing the kicking and
 `target` is the person being kicked. `is_self` specifies whether or not this
 bot is the one being kicked.
+
+`on_nick(self. nickname, new_nickname, is_self)`  
+Called when a user changes their nickname. `is_self` specifies whether or not
+this bot's nickname is the one being changed.
 
 `on_names(self, channel, names)`  
 Called when the server sends a list of names for the specified channel. `names`
@@ -86,6 +89,9 @@ Leaves the specified channel with the specified part message.
 
 `quit(message=None)`  
 Closes connection to the IRC server with the specified quit message.
+
+`nick(new_nickname)`  
+Changes the bot's nickname.
 
 `names(channel)`  
 Requests a list of names for the current channel.
