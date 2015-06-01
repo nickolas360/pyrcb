@@ -20,7 +20,7 @@ import socket
 import ssl
 import threading
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
 
 class IrcBot(object):
@@ -172,7 +172,7 @@ class IrcBot(object):
             is_self = args[1].lower() == self.nickname.lower()
             async(self.on_kick, nick, args[0], args[1], is_self)
         elif cmd == "NICK":
-            is_self = args[1].lower() == self.nickname.lower()
+            is_self = nick == self.nickname.lower()
             if is_self:
                 self.nickname = args[0]
             async(self.on_nick, nick, args[0], is_self)
