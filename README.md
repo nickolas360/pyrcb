@@ -11,18 +11,16 @@ below).
 
 See [examples](examples) for examples.
 
+##### New in version 1.4.0:
+* Added `password()` function, which sets a connection password and identifies
+  with NickServ.
+
 ##### New in version 1.3.0:
 * Added `nick()` and `on_nick()` functions.
 
 ##### New in version 1.2.0:
 * A thread pool is now used when `async_events` is `True` for better
   performance.
-
-##### New in version 1.1.0:
-* `register()` now raises a `ValueError` if the specified nickname is already
-  in use.
-* If the server finds no names in reponse to a names request, `on_names()` will
-  now be called with `channel` and `names` set to `None`.
 
 ### Constructor
 `IrcBot(debug_print=False, print_function=print)`  
@@ -76,6 +74,10 @@ a valid [CA certificates file][1], such as [Mozilla's CA certificates][2] from
 [curl.haxx.se](http://curl.haxx.se/docs/caextract.html).
 [1]: https://docs.python.org/3.4/library/ssl.html#ca-certificates
 [2]: https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt
+
+`password(password)`  
+Sets a connection password. Can also be used to identify with NickServ. This
+must be called before `register()`.
 
 `register(nickname)`  
 Sends the IRC server nickname and user information. Raises a `ValueError` if

@@ -20,7 +20,7 @@ import socket
 import ssl
 import threading
 
-__version__ = "1.3.2"
+__version__ = "1.4.0"
 
 
 class IrcBot(object):
@@ -50,6 +50,9 @@ class IrcBot(object):
                 self.socket, cert_reqs=reqs, ca_certs=ca_certs)
         self.socket.connect((hostname, port))
         self.alive = True
+
+    def password(self, password):
+        self._writeline("PASS :{0}".format(password))
 
     def register(self, nickname):
         self.nickname = nickname
