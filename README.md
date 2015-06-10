@@ -25,8 +25,7 @@ See [examples](examples) for examples.
 ### Constructor
 `IrcBot(debug_print=False, print_function=print)`  
 Creates a new IRC bot. If `debug_print` is `True`, all communication with the
-IRC server will be sent to `print_function`, which is by default the standard
-`print` function.
+IRC server will be sent to `print_function`.
 
 ### Events
 `on_join(self, nickname, channel)`  
