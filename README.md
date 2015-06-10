@@ -11,16 +11,15 @@ below).
 
 See [examples](examples) for examples.
 
+##### New in version 1.4.2:
+* Fixed errors when PART or QUIT messages are received with no message.
+
 ##### New in version 1.4.0:
 * Added `password()` function, which sets a connection password and identifies
   with NickServ.
 
 ##### New in version 1.3.0:
 * Added `nick()` and `on_nick()` functions.
-
-##### New in version 1.2.0:
-* A thread pool is now used when `async_events` is `True` for better
-  performance.
 
 ### Constructor
 `IrcBot(debug_print=False, print_function=print)`  
