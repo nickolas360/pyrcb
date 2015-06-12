@@ -11,6 +11,12 @@ below).
 
 See [examples](examples) for examples.
 
+##### New in version 1.5.0:
+* Added `delay` parameter to `IrcBot`'s constructor, which delays messages to
+  avoid throttling.
+* Added `is_self` parameter to `on_join()`.
+* Added `wait()` function, which waits for `listen_async()` to finish.
+
 ##### New in version 1.4.2:
 * Fixed errors when PART or QUIT messages are received with no message.
 
@@ -18,17 +24,17 @@ See [examples](examples) for examples.
 * Added `password()` function, which sets a connection password and identifies
   with NickServ.
 
-##### New in version 1.3.0:
-* Added `nick()` and `on_nick()` functions.
-
 ### Constructor
-`IrcBot(debug_print=False, print_function=print)`  
+`IrcBot(debug_print=False, print_function=print, delay=True)`  
 Creates a new IRC bot. If `debug_print` is `True`, all communication with the
-IRC server will be sent to `print_function`.
+IRC server will be sent to `print_function`. If `delay` is `True`, messages
+(PRIVMSGs) will be delayed to avoid throttling. The delay between messages is
+no more than 1.5 seconds.
 
 ### Events
-`on_join(self, nickname, channel)`  
-Called when a user joins a channel.
+`on_join(self, nickname, channel, is_self)`  
+Called when a user joins a channel. `is_self` specifies whether this bot is the
+one joining the channel.
 
 `on_part(self, nickname, channel, message)`  
 Called when a user leaves a channel. `message` is the part message.
@@ -117,6 +123,9 @@ The same as `listen()`, except messages are received on a separate thread. This
 method is non-blocking and calls the optional function `callback` when
 connecion to the IRC server is lost. The thread started by this method is a
 daemon thread and will thus not keep the program running.
+
+`wait()`  
+Blocks until `listen_async()` finishes.
 
 `is_alive()`  
 Returns whether or not the IRC bot is connected to the IRC server. If you need
