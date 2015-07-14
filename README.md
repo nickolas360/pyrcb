@@ -1,7 +1,7 @@
 # pyrcb
 `pyrcb` is a simple library for Python IRC bots. It isn't a full implementation
 of IRC; instead, it provides just enough to write IRC bots. `pyrcb` is
-compatible with Python 2 and 3.
+compatible with Python 2 and 3 (requires Python 2.7 or >= Python 3.2).
 
 To use it, import `pyrcb` and create a class that inherits `IrcBot`. Override
 one or more of the events. (You will most likely want to call `send()` from
@@ -11,6 +11,11 @@ below).
 
 See [examples](examples) for examples.
 
+##### New in version 1.5.1:
+* Fixed delays when sending messages to multiple channels or users.
+* Notices are also delayed, instead of only PRIVMSGs.
+* Fixed issues with closing sockets and handling socket errors.
+
 ##### New in version 1.5.0:
 * Added `delay` parameter to `IrcBot`'s constructor, which delays messages to
   avoid throttling.
@@ -19,10 +24,6 @@ See [examples](examples) for examples.
 
 ##### New in version 1.4.2:
 * Fixed errors when PART or QUIT messages are received with no message.
-
-##### New in version 1.4.0:
-* Added `password()` function, which sets a connection password and identifies
-  with NickServ.
 
 ### Constructor
 `IrcBot(debug_print=False, print_function=print, delay=True)`  
