@@ -29,8 +29,8 @@ See [examples](examples) for examples.
 `IrcBot(debug_print=False, print_function=print, delay=True)`  
 Creates a new IRC bot. If `debug_print` is `True`, all communication with the
 IRC server will be sent to `print_function`. If `delay` is `True`, messages
-(PRIVMSGs) will be delayed to avoid throttling. The delay between messages is
-no more than 1.5 seconds.
+(PRIVMSGs and NOTICEs) will be delayed to avoid throttling. The delay between
+messages is no more than 1.5 seconds.
 
 ### Events
 `on_join(self, nickname, channel, is_self)`  
