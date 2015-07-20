@@ -1,7 +1,7 @@
 # pyrcb
 `pyrcb` is a simple library for Python IRC bots. It isn't a full implementation
 of IRC; instead, it provides just enough to write IRC bots. `pyrcb` is
-compatible with Python 2 and 3 (requires Python 2.7 or >= Python 3.2).
+compatible with Python 2 (2.7) and Python 3 (3.2 or higher).
 
 To use it, import `pyrcb` and create a class that inherits `IrcBot`. Override
 one or more of the events. (You will most likely want to call `send()` from
