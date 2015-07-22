@@ -23,7 +23,7 @@ import ssl
 import threading
 import time
 
-__version__ = "1.5.1"
+__version__ = "1.5.2"
 
 
 class IrcBot(object):
@@ -90,9 +90,9 @@ class IrcBot(object):
         self._writeline("JOIN {0}".format(channel))
 
     def part(self, channel, message=None):
+        part_msg = " :" + message if message else ""
+        self._writeline("PART {0}{1}".format(channel, part_msg))
         if channel.lower() in self.channels:
-            part_msg = " :" + message if message else ""
-            self._writeline("PART {0}{1}".format(channel, part_msg))
             self.channels.remove(channel.lower())
 
     def quit(self, message=None):
@@ -197,7 +197,7 @@ class IrcBot(object):
             self.is_registered = True
         elif cmd == "JOIN":
             if is_self:
-                self.channels.append(args[0])
+                self.channels.append(args[0].lower())
             async(self.on_join, nick, args[0], is_self)
         elif cmd == "PART":
             async(self.on_part, nick, args[0], (args[1:] or [""])[0])

@@ -11,6 +11,9 @@ below).
 
 See [examples](examples) for examples.
 
+##### New in version 1.5.2:
+* Fixed case-insensitivity issues with parting channels.
+
 ##### New in version 1.5.1:
 * Fixed delays when sending messages to multiple channels or users.
 * Notices are also delayed, instead of only PRIVMSGs.
@@ -21,9 +24,6 @@ See [examples](examples) for examples.
   avoid throttling.
 * Added `is_self` parameter to `on_join()`.
 * Added `wait()` function, which waits for `listen_async()` to finish.
-
-##### New in version 1.4.2:
-* Fixed errors when PART or QUIT messages are received with no message.
 
 ### Constructor
 `IrcBot(debug_print=False, print_function=print, delay=True)`  
