@@ -11,6 +11,9 @@ below).
 
 See [examples](examples) for examples.
 
+##### New in version 1.5.3:
+* Fixed issues with `async_events`.
+
 ##### New in version 1.5.2:
 * Fixed case-insensitivity issues with parting channels.
 
