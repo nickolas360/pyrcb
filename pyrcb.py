@@ -34,7 +34,7 @@ class IrcBot(object):
 
     # Initializes instance variables.
     def _init(self):
-        self.thread_pool = ThreadPool(processes=16)
+        self.thread_pool = None
         self.listen_thread = None
 
         self._delay_event = threading.Event()
@@ -149,6 +149,8 @@ class IrcBot(object):
         pass
 
     def listen(self, async_events=False):
+        if async_events:
+            self.thread_pool = ThreadPool(processes=16)
         while True:
             try:
                 line = self._readline()
@@ -161,7 +163,7 @@ class IrcBot(object):
                 self._close_socket()
                 return
             else:
-                self._handle(line)
+                self._handle(line, async_events)
 
     def listen_async(self, callback=None, async_events=False):
         def target():
