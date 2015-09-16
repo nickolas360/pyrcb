@@ -26,7 +26,11 @@ Changelog
    :doc:`transitioning`. If you're updating a bot which uses an older version
    of pyrcb, you should follow that guide.
 
-.. _1.6.0-changelog:
+1.6.1
+-----
+
+* Fixed an issue where `IRCBot.nickname` wouldn't update after changing
+  nicknames.
 
 1.6.0
 -----

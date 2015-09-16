@@ -24,7 +24,7 @@ import ssl
 import threading
 import time
 
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 
 
 class IRCBot(object):
@@ -423,6 +423,8 @@ class IRCBot(object):
     # Replaces a nickname in all joined channels' nicklists.
     def replace_nickname(self, nickname, new_nickname):
         for channel in self.channels:
+            if nickname == self.nickname:
+                self.nickname = new_nickname
             nicklist = self.nicklist[channel]
             if nickname in nicklist:
                 nicklist.remove(nickname)
