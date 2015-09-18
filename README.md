@@ -21,7 +21,7 @@ a look at the [examples](examples/).
 
 [this guide]: https://pyrcb.readthedocs.org/guide.html
 
-The current version of pyrcb is **1.6.1**, which was released on 2015-09-16.
+The current version of pyrcb is **1.6.2**, which was released on 2015-09-17.
 See the [changelog] for more information.
 
 [changelog]: https://pyrcb.readthedocs.org/release-notes/1.6/changelog.html

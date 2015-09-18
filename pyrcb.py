@@ -24,7 +24,7 @@ import ssl
 import threading
 import time
 
-__version__ = "1.6.1"
+__version__ = "1.6.2"
 
 
 class IRCBot(object):
@@ -369,7 +369,7 @@ class IRCBot(object):
             self.on_join(nick, channel)
         elif cmd == "PART":
             self.remove_nickname(nick, [channel])
-            part_msg = (args + [None])[-1]
+            part_msg = (args + [None])[1]
             self.on_part(nick, channel, part_msg)
         elif cmd == "QUIT":
             self.remove_nickname(nick, self.channels)

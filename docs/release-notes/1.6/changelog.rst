@@ -26,6 +26,11 @@ Changelog
    :doc:`transitioning`. If you're updating a bot which uses an older version
    of pyrcb, you should follow that guide.
 
+1.6.2
+-----
+
+* Fixed an issue where part messages would always be set to `None`.
+
 1.6.1
 -----
 
