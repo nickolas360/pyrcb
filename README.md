@@ -8,18 +8,18 @@ needed to easily create bots.
 pyrcb is compatible with Python 2.7 and Python 3.1 or higher. SSL/TLS
 support requires at least Python 2.7.9 or Python 3.2.
 
+Documentation for pyrcb is available at <https://pyrcb.readthedocs.org/>. If
+you're new to pyrcb, start with [this guide] and take a look at the
+[examples](examples/).
+
+[this guide]: https://pyrcb.readthedocs.org/guide.html
+
 To use pyrcb, just drop [pyrcb.py](pyrcb.py) into your project. Make sure
 you include a copy of the [LGPL] as well as the [GPL], since the LGPL is a set
 of additional permissions on top of the GPL.
 
 [LGPL]: https://www.gnu.org/licenses/lgpl.txt
 [GPL]: https://www.gnu.org/licenses/gpl.txt
-
-Documentation for pyrcb is available at <https://pyrcb.readthedocs.org/>. If
-you're new to pyrcb, it is recommended you start with [this guide] and take
-a look at the [examples](examples/).
-
-[this guide]: https://pyrcb.readthedocs.org/guide.html
 
 The current version of pyrcb is **1.6.2**, which was released on 2015-09-17.
 See the [changelog] for more information.
