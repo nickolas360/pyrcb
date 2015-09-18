@@ -26,16 +26,22 @@ Changelog
    :doc:`transitioning`. If you're updating a bot which uses an older version
    of pyrcb, you should follow that guide.
 
+.. _changelog-1.6.2:
+
 1.6.2
 -----
 
 * Fixed an issue where part messages would always be set to `None`.
+
+.. _changelog-1.6.1:
 
 1.6.1
 -----
 
 * Fixed an issue where `IRCBot.nickname` wouldn't update after changing
   nicknames.
+
+.. _changelog-1.6.0:
 
 1.6.0
 -----
