@@ -24,7 +24,7 @@ import ssl
 import threading
 import time
 
-__version__ = "1.6.2"
+__version__ = "1.7.0"
 
 
 class IRCBot(object):
@@ -61,6 +61,7 @@ class IRCBot(object):
         self.channels = []
 
         self._names_buffer = IDefaultDict(list)
+        self.old_nicklist = IDefaultDict(list)
         self.nicklist = IDefaultDict(list)
 
         # Buffer of delayed messages. Stores tuples of
@@ -220,11 +221,12 @@ class IRCBot(object):
         :param str message: The part message.
         """
 
-    def on_quit(self, nickname, message):
+    def on_quit(self, nickname, message, channels):
         """Called when a user disconnects from the server. (``QUIT`` command.)
 
         :param IStr nickname: The nickname of the user.
         :param str message: The quit message.
+        :param list channels: A list of channels the user was in.
         """
 
     def on_kick(self, nickname, channel, target, message):
@@ -372,8 +374,8 @@ class IRCBot(object):
             part_msg = (args + [None])[1]
             self.on_part(nick, channel, part_msg)
         elif cmd == "QUIT":
-            self.remove_nickname(nick, self.channels)
-            self.on_quit(nick, args[-1])
+            channels = self.remove_nickname(nick, self.channels)
+            self.on_quit(nick, args[-1], channels)
         elif cmd == "KICK":
             self.remove_nickname(args[1], [channel])
             self.on_kick(nick, channel, IStr(args[1]), args[-1])
@@ -386,15 +388,15 @@ class IRCBot(object):
             [self.on_message, self.on_notice][cmd == "NOTICE"](
                 args[-1], nick, channel, is_query)
         elif cmd == "353":  # RPL_NAMREPLY
-            channel = IStr(args[1])
+            channel = IStr(args[2])
             names = [IStr(n.lstrip("@+")) for n in args[-1].split()]
             self._names_buffer[channel] += names
         elif cmd == "366":  # RPL_ENDOFNAMES
             self.nicklist.update(self._names_buffer)
             for channel, names in self._names_buffer.items():
                 self.on_names(channel, names)
-            if args[0] not in self._names_buffer:
-                self.on_names(IStr(args[0]), [])
+            if args[1] not in self._names_buffer:
+                self.on_names(IStr(args[1]), [])
             self._names_buffer.clear()
         elif cmd == "433":  # ERR_NICKNAMEINUSE
             if not self.is_registered:
@@ -412,6 +414,7 @@ class IRCBot(object):
     # Removes a nickname from channels' nicklists and removes channels
     # from the list of channels if this bot is being removed.
     def remove_nickname(self, nickname, channels):
+        removed_channels = []
         for channel in channels:
             nicklist = self.nicklist[channel]
             if nickname in nicklist:
@@ -419,6 +422,8 @@ class IRCBot(object):
                     if channel in self.channels:
                         self.channels.remove(channel)
                 nicklist.remove(nickname)
+                removed_channels.append(channel)
+        return removed_channels
 
     # Replaces a nickname in all joined channels' nicklists.
     def replace_nickname(self, nickname, new_nickname):

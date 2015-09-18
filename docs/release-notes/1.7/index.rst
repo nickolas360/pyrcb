@@ -17,11 +17,10 @@
 
 .. currentmodule:: pyrcb
 
-Release notes
-=============
+Version 1.7
+===========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   1.7/index
-   1.6/index
+   changelog

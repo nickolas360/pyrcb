@@ -17,11 +17,16 @@
 
 .. currentmodule:: pyrcb
 
-Release notes
-=============
+Changelog
+=========
 
-.. toctree::
-   :maxdepth: 2
+1.7.0
+-----
 
-   1.7/index
-   1.6/index
+* Added ``channels`` parameter, a list of channels the user was in, to
+  :meth:`~IRCBot.on_quit`. The function signature is now:
+
+  .. method:: IRCBot.on_quit(nickname, message, channels):
+     :noindex:
+
+* Fixed an issue where `IRCBot.nicklist` wouldn't update properly.

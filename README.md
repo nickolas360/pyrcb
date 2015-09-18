@@ -21,7 +21,7 @@ of additional permissions on top of the GPL.
 [LGPL]: https://www.gnu.org/licenses/lgpl.txt
 [GPL]: https://www.gnu.org/licenses/gpl.txt
 
-The current version of pyrcb is **1.6.2**, which was released on 2015-09-17.
+The current version of pyrcb is **1.7.0**, which was released on 2015-09-18.
 See the [changelog] for more information.
 
 [changelog]: https://pyrcb.readthedocs.org/release-notes/1.6/changelog.html
