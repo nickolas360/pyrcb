@@ -136,14 +136,16 @@ class IRCBot(object):
     def join(self, channel):
         """Joins a channel. (``JOIN`` command.)
 
-        :param str channel: The channel to join. Must start with "#".
+        :param str channel: The channel to join. Must start with the channel
+          prefix.
         """
         self.send_raw("JOIN", [channel])
 
     def part(self, channel, message=None):
         """Leaves a channel. (``PART`` command.)
 
-        :param str channel: The channel to leave. Must start with "#".
+        :param str channel: The channel to leave. Must start with the channel
+          prefix.
         :param str message: An optional part message.
         """
         self.send_raw("PART", filter(None, [channel, message]))
