@@ -20,6 +20,14 @@
 Changelog
 =========
 
+.. _changelog-1.7.1:
+
+1.7.1
+-----
+
+* Exceptions no longer occur when comparing an `IStr` object with an object
+  which is not an instance of `str`.
+
 .. _changelog-1.7.0:
 
 1.7.0

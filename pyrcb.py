@@ -24,7 +24,7 @@ import ssl
 import threading
 import time
 
-__version__ = "1.7.0"
+__version__ = "1.7.1"
 
 
 class IRCBot(object):
@@ -555,7 +555,9 @@ def irc_upper(string):
 def istr_operators(cls):
     def get_method(name):
         def method(self, other):
-            return getattr(self._lower, name)(irc_lower(other))
+            if isinstance(other, str):
+                other = irc_lower(other)
+            return getattr(self._lower, name)(other)
         return method
     for name in ("lt", "le", "ne", "eq", "gt", "ge", "contains"):
         name = "__{0}__".format(name)
