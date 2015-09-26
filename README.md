@@ -1,6 +1,8 @@
 pyrcb
 =====
 
+Version 1.7.2
+
 **pyrcb** is a simple, self-contained, extendable library for building IRC
 bots. It isn't a full implementation of IRC, but rather provides everything
 needed to easily create bots.
