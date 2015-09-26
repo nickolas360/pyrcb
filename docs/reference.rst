@@ -139,5 +139,5 @@ IStr
 IDefaultDict
 ------------
 
-.. autoclass:: IDefaultDict()
+.. autoclass:: IDefaultDict
    :show-inheritance:

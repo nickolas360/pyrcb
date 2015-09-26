@@ -20,6 +20,15 @@
 Changelog
 =========
 
+.. _changelog-1.7.2:
+
+1.7.2
+-----
+
+* `IDefaultDict` is now a subclass of `~collections.OrderedDict`, so the order
+  of keys is remembered. `~collections.defaultdict` functionality is still
+  available.
+
 .. _changelog-1.7.1:
 
 1.7.1
