@@ -20,6 +20,13 @@
 Changelog
 =========
 
+.. _changelog-1.7.3:
+
+* `IRCBot` attributes are now initialized when the constructor is called,
+  rather than when :meth:`~IRCBot.connect` is called. Attributes are
+  re-initialized upon subsequent calls to :meth:`~IRCBot.connect`, so `IRCBot`
+  objects are still reusable.
+
 .. _changelog-1.7.2:
 
 1.7.2
