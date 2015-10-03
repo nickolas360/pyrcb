@@ -22,6 +22,9 @@ Changelog
 
 .. _changelog-1.7.4:
 
+1.7.4
+-----
+
 * Added ``verify`` parameter, whether or not to verify the server's SSL/TLS
   certificate and hostname, to :meth:`~IRCBot.connect`.
 * :meth:`~IRCBot.connect` now loads the system's CA certificates when
@@ -29,6 +32,9 @@ Changelog
   or 3.3.)
 
 .. _changelog-1.7.3:
+
+1.7.3
+-----
 
 * `IRCBot` attributes are now initialized when the constructor is called,
   rather than when :meth:`~IRCBot.connect` is called. Attributes are
