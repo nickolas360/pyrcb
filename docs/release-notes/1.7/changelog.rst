@@ -25,7 +25,7 @@ Changelog
 1.7.4
 -----
 
-* Added ``verify`` parameter, whether or not to verify the server's SSL/TLS
+* Added ``verify_ssl`` parameter, whether or not to verify the server's SSL/TLS
   certificate and hostname, to :meth:`~IRCBot.connect`.
 * :meth:`~IRCBot.connect` now loads the system's CA certificates when
   ``ca_certs`` is not provided. (This does not work on Windows with Python 3.2
