@@ -79,7 +79,8 @@ class IRCBot(object):
     # Public IRC methods
     # ==================
 
-    def connect(self, hostname, port, use_ssl=False, ca_certs=None):
+    def connect(self, hostname, port, use_ssl=False,
+                ca_certs=None, verify_ssl=True):
         """Connects to an IRC server.
 
         :param str hostname: The hostname of the IRC server.
@@ -97,11 +98,21 @@ class IRCBot(object):
         self.hostname = hostname
         self.port = port
         self.socket.connect((hostname, port))
+
         if use_ssl:
-            reqs = ssl.CERT_REQUIRED if ca_certs else ssl.CERT_NONE
-            self.socket = ssl.wrap_socket(
-                self.socket, cert_reqs=reqs, ca_certs=ca_certs)
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            if verify_ssl:
+                context.verify_mode = ssl.CERT_REQUIRED
             if ca_certs:
+                context.load_verify_locations(cafile=ca_certs)
+            else:
+                # Call load_default_certs() if available; otherwise, call
+                # set_default_verify_paths() (doesn't work on Windows).
+                getattr(context, "load_default_certs",
+                        context.set_default_verify_paths)()
+
+            self.socket = context.wrap_socket(self.socket)
+            if verify_ssl:
                 ssl.match_hostname(self.socket.getpeercert(), hostname)
 
         self.alive = True
