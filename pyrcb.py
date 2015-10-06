@@ -577,7 +577,7 @@ def irc_upper(string):
 def istr_operators(cls):
     def get_method(name):
         def method(self, other):
-            if isinstance(other, str):
+            if isinstance(other, str) or isinstance(other, type("")):
                 other = irc_lower(other)
             return getattr(self._lower, name)(other)
         return method
