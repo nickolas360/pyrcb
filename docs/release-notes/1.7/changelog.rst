@@ -20,6 +20,14 @@
 Changelog
 =========
 
+.. _changelog-1.7.5:
+
+1.7.5
+-----
+
+* Fixed IStr comparisons with Python 2 (which was causing pyrcb to not work
+  with Python 2 at all).
+
 .. _changelog-1.7.4:
 
 1.7.4
