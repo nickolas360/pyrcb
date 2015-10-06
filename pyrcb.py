@@ -381,7 +381,7 @@ class IRCBot(object):
             self._handle(line)
 
     # Parses an IRC message and calls the appropriate event.
-    def _handle(self, message, async_events=False):
+    def _handle(self, message):
         nick, cmd, args = IRCBot.parse(message)
         if cmd in ["JOIN", "PART", "KICK"]:
             channel = IStr(args[0])
