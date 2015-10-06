@@ -24,7 +24,7 @@ import ssl
 import threading
 import time
 
-__version__ = "1.7.4"
+__version__ = "1.7.5"
 
 
 class IRCBot(object):
