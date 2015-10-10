@@ -582,34 +582,39 @@ def irc_upper(string):
     return upper
 
 
-# Decorator to implement case-insensitive operators for IStr.
-def istr_operators(cls):
+# Decorator to implement case-insensitive methods for IStr.
+def istr_methods(cls):
     def get_method(name):
-        def method(self, other):
-            if isinstance(other, str) or isinstance(other, type("")):
-                other = irc_lower(other)
-            return getattr(self._lower, name)(other)
+        def method(self, string, *args, **kwargs):
+            if isinstance(string, (str, type(""))):
+                string = irc_lower(string)
+            return getattr(self._lower, name)(string, *args, **kwargs)
         return method
-    for name in ("lt", "le", "ne", "eq", "gt", "ge", "contains"):
+
+    for name in ["index", "find", "count", "startswith", "endswith"]:
+        setattr(cls, name, get_method(name))
+    for name in ["lt", "le", "ne", "eq", "gt", "ge", "contains"]:
         name = "__{0}__".format(name)
         setattr(cls, name, get_method(name))
     return cls
 
 
-# Decorator to implement case-insensitive methods for IStr.
-def istr_methods(cls):
+# Decorator to implement case-insensitive methods for IDefaultDict.
+def idefaultdict_methods(cls):
     def get_method(name):
-        def method(self, string, start=None, end=None):
-            return getattr(self._lower, name)(irc_lower(string), start, end)
+        def method(self, key, *args, **kwargs):
+            if isinstance(key, (str, type(""))):
+                key = IStr(key)
+            return getattr(super(cls, self), name)(key, *args, **kwargs)
         return method
-    for name in ("index", "find", "count", "startswith", "endswith"):
+
+    for name in ["get", "__getitem__", "__setitem__", "__contains__"]:
         setattr(cls, name, get_method(name))
     return cls
 
 
-@istr_operators
+# type("") is unicode in Python 2 and str in Python 3.
 @istr_methods
-# Inherit from unicode() in Python 2 and str() in Python 3.
 class IStr(type("")):
     """Bases: `str` (`unicode` in Python 2)
 
@@ -654,6 +659,7 @@ class IStr(type("")):
         return self._upper
 
 
+@idefaultdict_methods
 class IDefaultDict(OrderedDict):
     """A case-insensitive `~collections.defaultdict` class based on `IRC case
     rules`_.
@@ -670,12 +676,6 @@ class IDefaultDict(OrderedDict):
     def __init__(self, default_factory=None, *args, **kwargs):
         super(IDefaultDict, self).__init__(*args, **kwargs)
         self.default_factory = default_factory
-
-    def __getitem__(self, key):
-        return super(IDefaultDict, self).__getitem__(IStr(key))
-
-    def __setitem__(self, key, value):
-        super(IDefaultDict, self).__setitem__(IStr(key), value)
 
     def __missing__(self, key):
         if self.default_factory is None:
