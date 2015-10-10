@@ -17,10 +17,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from bisect import insort
 from collections import OrderedDict
+from locale import getpreferredencoding
 import errno
 import re
 import socket
 import ssl
+import sys
 import threading
 import time
 
@@ -37,14 +39,15 @@ class IRCBot(object):
 
     :param bool debug_print: Whether or not communication with the IRC server
       should be printed.
-    :param callable print_function: The print function to be used if
-      ``debug_print`` is true. Should accept a single string argument.
+    :param callable print_function: An optional function to be used with
+      ``debug_print``. Should accept a single unicode string argument.
+      Otherwise, communication is printed to stdout.
     :param bool delay: Whether or not sent messages should be delayed to avoid
       server throttling or spam prevention.
     """
-    def __init__(self, debug_print=False, print_function=print, delay=True):
+    def __init__(self, debug_print=False, print_function=None, delay=True):
         self.debug_print = debug_print
-        self.print_function = print_function
+        self.print_function = print_function or safe_print
         self.delay = delay
         self._first_use = True
         self._init_attr()
@@ -555,6 +558,12 @@ class IRCBot(object):
         finally:
             self.alive = False
             self.delay_event.set()
+
+
+# Prints a string, replacing characters invalid in the current encoding.
+def safe_print(string, file=sys.stdout):
+    encoding = getpreferredencoding()
+    print(string.encode(encoding, "replace").decode(encoding), file=file)
 
 
 # Returns a lowercase version of a string, according to IRC case rules.
