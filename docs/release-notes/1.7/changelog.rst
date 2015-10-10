@@ -20,6 +20,16 @@
 Changelog
 =========
 
+.. _changelog-1.7.6:
+
+1.7.6
+-----
+
+* Errors no longer occur when using ``debug_print`` with a non-Unicode current
+  encoding.
+* :meth:`~dict.get` and ``key in dict`` are now case-insensitive in
+  `IDefaultDict`.
+
 .. _changelog-1.7.5:
 
 1.7.5
