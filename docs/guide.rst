@@ -44,7 +44,7 @@ Begin by importing `IRCBot` from ``pyrcb``::
 
    from pyrcb import IRCBot
 
-pyrcb bots should be classes which inherit `IRCBot`:
+pyrcb bots are classes which inherit `IRCBot`:
 
 .. code-block:: python
 
