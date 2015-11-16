@@ -376,7 +376,7 @@ class IRCBot(object):
             try:
                 line = self.readline()
             except socket.error as e:
-                if e.errno not in [errno.EPIPE, errno.ENOTCONN]:
+                if e.errno != errno.EPIPE:
                     raise
                 return
             if line is None:
@@ -553,7 +553,8 @@ class IRCBot(object):
             self.socket.shutdown(socket.SHUT_RDWR)
             self.socket.close()
         except socket.error as e:
-            if e.errno not in [errno.EPIPE, errno.ENOTCONN]:
+            errnos = [errno.EBADF, errno.ENOTCONN]
+            if e.errno not in errnos:
                 raise
         finally:
             self.alive = False
