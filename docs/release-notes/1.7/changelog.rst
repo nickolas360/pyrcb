@@ -20,6 +20,14 @@
 Changelog
 =========
 
+.. _changelog-1.7.7:
+
+1.7.7
+-----
+
+* Fixed an issue where calling :meth:`~IRCBot.quit` would raise an exception.
+* Improved socket exception handling.
+
 .. _changelog-1.7.6:
 
 1.7.6
