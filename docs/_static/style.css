@@ -24,3 +24,8 @@
 div.sphinxsidebar #searchbox input[type="text"] {
     width: 140px;
 }
+
+.admonition code.xref {
+    background-color: transparent;
+    border-bottom: none;
+}
