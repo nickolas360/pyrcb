@@ -20,6 +20,14 @@
 Changelog
 =========
 
+.. _changelog-1.7.8:
+
+1.7.8
+-----
+
+* Fixed uncaught socket errors with :meth:`~IRCBot.listen` and
+  :meth:`~IRCBot.quit`.
+
 .. _changelog-1.7.7:
 
 1.7.7
