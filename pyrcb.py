@@ -181,7 +181,7 @@ class IRCBot(object):
         while not self.is_registered:
             line = self.readline()
             if line is None:
-                return
+                raise IOError("Lost connection to the server.")
             self._handle(line)
 
     def join(self, channel):
