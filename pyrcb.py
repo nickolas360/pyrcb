@@ -147,20 +147,8 @@ class IRCBot(object):
         self.socket.connect((hostname, port))
 
         if use_ssl:
-            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            if verify_ssl:
-                context.verify_mode = ssl.CERT_REQUIRED
-            if ca_certs:
-                context.load_verify_locations(cafile=ca_certs)
-            else:
-                # Call load_default_certs() if available; otherwise, call
-                # set_default_verify_paths() (doesn't work on Windows).
-                getattr(context, "load_default_certs",
-                        context.set_default_verify_paths)()
-
-            self.socket = context.wrap_socket(self.socket)
-            if verify_ssl:
-                ssl.match_hostname(self.socket.getpeercert(), hostname)
+            self.socket = wrap_socket(
+                self.socket, hostname, ca_certs, verify_ssl)
 
         self.alive = True
         if self.delay:
@@ -651,6 +639,27 @@ def is_conn_err(ex):
         errno.ECONNREFUSED,
         errno.ECONNESET
     ]
+# Wraps a plain socket into an SSL one. Attempts to load default CA
+# certificates if none are provided. Verifies the server's certificate and
+# hostname if specified.
+def wrap_socket(sock, hostname=None, ca_certs=None, verify_ssl=True):
+    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    # Use load_default_certs() if available (Python >= 3.4); otherwise, use
+    # set_default_verify_paths() (doesn't work on Windows).
+    load_default_certs = getattr(
+        context, "load_default_certs", context.set_default_verify_paths)
+
+    if verify_ssl:
+        context.verify_mode = ssl.CERT_REQUIRED
+    if ca_certs:
+        context.load_verify_locations(cafile=ca_certs)
+    else:
+        load_default_certs()
+
+    sock = context.wrap_socket(sock)
+    if verify_ssl:
+        ssl.match_hostname(sock.getpeercert(), hostname)
+    return sock
 
 
 def is_badf(ex):
