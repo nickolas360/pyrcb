@@ -515,8 +515,8 @@ class IRCBot(object):
     # from the list of channels if this bot is being removed.
     def remove_nickname(self, nickname, channels):
         removed_channels = []
-        pairs = zip(channels, map(self.nicklist.get, channels))
-        pairs = ((c, n) for c, n in pairs if nickname in n)
+        pairs = [(c, self.nicklist[c]) for c in channels]
+        pairs = [(c, n) for c, n in pairs if nickname in n]
         for channel, nicklist in pairs:
             if nickname == self.nickname and channel in self.channels:
                 self.channels.remove(channel)
