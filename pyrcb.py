@@ -430,8 +430,8 @@ class IRCBot(object):
         try:
             self._listen()
         finally:
-            self.listen_event.set()
             self.close_socket()
+            self.listen_event.set()
 
     def listen_async(self, callback=None):
         """Listens for incoming messages on a separate thread and calls the
@@ -445,10 +445,13 @@ class IRCBot(object):
         """
         def target():
             try:
-                self.listen()
+                self._listen()
             finally:
+                self.close_socket()
                 if callback:
                     callback()
+                self.listen_event.set()
+
         t = threading.Thread(target=target)
         t.daemon = True
         t.start()
