@@ -244,7 +244,7 @@ class IRCBot(object):
 
         :param str channel: The channel to request a list of users from.
         """
-        if not channel.isspace():
+        if channel and not channel.isspace():
             self.send_raw("NAMES", [channel])
 
     def send_raw(self, command, args=[]):
