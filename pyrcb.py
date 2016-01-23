@@ -676,28 +676,12 @@ def safe_print(string, file=sys.stdout):
     print(string.encode(encoding, "replace").decode(encoding), file=file)
 
 
-# Returns a lowercase version of a string, according to IRC case rules.
-def irc_lower(string):
-    lower = string.lower()
-    for c, r in zip(r"[]\~", r"{}|^"):
-        lower = lower.replace(c, r)
-    return lower
-
-
-# Returns an uppercase version of a string, according to IRC case rules.
-def irc_upper(string):
-    upper = string.upper()
-    for c, r in zip(r"{}|^", r"[]\~"):
-        upper = upper.replace(c, r)
-    return upper
-
-
 # Decorator to implement case-insensitive methods for IStr.
 def istr_methods(cls):
     def get_method(name):
         def method(self, string, *args, **kwargs):
             if isinstance(string, (str, type(""))):
-                string = irc_lower(string)
+                string = IStr.make_lower(string)
             return getattr(self._lower, name)(string, *args, **kwargs)
         return method
 
@@ -723,10 +707,10 @@ def idefaultdict_methods(cls):
     return cls
 
 
-# type("") is unicode in Python 2 and str in Python 3.
+# Inherits from unicode in Python 2 and str in Python 3.
 @istr_methods
-class IStr(type("")):
-    """Bases: `str` (`unicode` in Python 2)
+class IStr(ustr):
+    """Bases: `str` (or `unicode` in Python 2)
 
     A case-insensitive string class based on `IRC case rules`_.
 
@@ -755,18 +739,37 @@ class IStr(type("")):
     """
 
     def __init__(self, *args, **kwargs):
-        string = type("")(self)
-        self._lower = irc_lower(string)
-        self._upper = irc_upper(string)
+        string = ustr(self)
+        self._lower = IStr.make_lower(string)
+        self._upper = IStr.make_upper(string)
 
     def __hash__(self):
         return hash(self._lower)
+
+    def __repr__(self):
+        return "IStr({0})".format(super(IStr, self).__repr__())
 
     def lower(self):
         return self._lower
 
     def upper(self):
         return self._upper
+
+    # Returns a lowercase version of a string, according to IRC case rules.
+    @staticmethod
+    def make_lower(string):
+        lower = string.lower()
+        for char, replacement in zip(r"[]\~", r"{}|^"):
+            lower = lower.replace(char, replacement)
+        return lower
+
+    # Returns an uppercase version of a string, according to IRC case rules.
+    @staticmethod
+    def make_upper(string):
+        upper = string.upper()
+        for char, replacement in zip(r"{}|^", r"[]\~"):
+            upper = upper.replace(char, replacement)
+        return upper
 
 
 @idefaultdict_methods
@@ -778,8 +781,9 @@ class IDefaultDict(OrderedDict):
     assignment and retrieval. Keys should be only of type `str` or `IStr`.
 
     This class is actually a subclass of `~collections.OrderedDict`, so keys
-    are kept in the order they were added, but the functionality of
-    `~collections.defaultdict` is available.
+    are kept in the order they were added in, but the functionality of
+    `~collections.defaultdict` is still available, and the constructor matches
+    that of `~collections.defaultdict` as well.
 
     .. _IRC case rules: https://tools.ietf.org/html/rfc2812#section-2.2
     """
