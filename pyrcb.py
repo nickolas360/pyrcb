@@ -484,7 +484,7 @@ class IRCBot(object):
             try:
                 line = self.readline()
             except socket.error as e:
-                if not (is_badf(e) or is_conn_err(e)):
+                if not catch_socket_error(e):
                     raise
                 return
             if line is None:
@@ -625,23 +625,13 @@ class IRCBot(object):
             self.socket.shutdown(socket.SHUT_RDWR)
             self.socket.close()
         except socket.error as e:
-            if not (is_badf(e) or is_conn_err(e)):
+            if not catch_socket_error(e):
                 raise
         finally:
             self.alive = False
             self.delay_event.set()
 
 
-# Checks if an exception is a ConnectionError
-# using errnos for Python 2 compatibility.
-def is_conn_err(ex):
-    return ex.errno in [
-        errno.EPIPE,
-        errno.ESHUTDOWN,
-        errno.ECONNABORTED,
-        errno.ECONNREFUSED,
-        errno.ECONNESET
-    ]
 # Wraps a plain socket into an SSL one. Attempts to load default CA
 # certificates if none are provided. Verifies the server's certificate and
 # hostname if specified.
@@ -665,9 +655,16 @@ def wrap_socket(sock, hostname=None, ca_certs=None, verify_ssl=True):
     return sock
 
 
-def is_badf(ex):
+# Checks if a socket exception should be caught by looking at its errno.
+def catch_socket_error(ex):
     return ex.errno in [
-        errno.EBADF
+        errno.EPIPE,  # Broken pipe
+        errno.EBADF,  # Bad file descriptor; close() has been called
+        errno.ENOTCONN,  # Transport endpoint not connected
+        errno.ESHUTDOWN,  # Can't send after shutdown
+        errno.ECONNABORTED,  # Connection aborted
+        errno.ECONNRESET,  # Connection reset
+        errno.ECONNREFUSED,  # Connection refused
     ]
 
 
