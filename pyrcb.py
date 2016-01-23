@@ -58,7 +58,7 @@ class IRCBot(object):
         self.debug_print = debug_print
         self.print_function = print_function or safe_print
         self.delay = delay
-        self.events = IDefaultDict()
+        self.events = IDefaultDict(list)
 
         # Multiplied by the number of consecutive messages sent to determine
         # how many seconds to wait before sending the next one.
@@ -416,10 +416,13 @@ class IRCBot(object):
         `None`.  This ensures that IRC commands with an optional last argument
         will be handled correctly.
 
+        Multiple events can be registered for the same IRC command, but is
+        usually isn't necessary to do this.
+
         :param callable function: The event handler.
         :param str command: The IRC command or numeric reply to listen for.
         """
-        self.events[command] = function
+        self.events[command].append(function)
 
     def listen(self):
         """Listens for incoming messages and calls the appropriate events.
@@ -491,16 +494,21 @@ class IRCBot(object):
                 return
             self._handle(line)
 
-    # Parses an IRC message and calls the appropriate event.
+    # Parses an IRC message and calls the appropriate events.
     def _handle(self, message):
         nickname, command, args = IRCBot.parse(message)
-        if command in self.events:
-            func = self.events[command]
-            func_args = [nickname] + args
-            nargs = len(inspect.getargspec(func).args) - 1
-            if len(func_args) < nargs:
-                func_args += [None] * (nargs - len(func_args))
-            func(*func_args)
+        for handler in self.events.get(command, []):
+            handler_args = [nickname] + args
+            nargs = len(inspect.getargspec(handler).args)
+
+            # Check if handler is a bound method.
+            if hasattr(handler, "__self__"):
+                nargs -= 1
+
+            # Fill in any extra arguments with None.
+            if len(handler_args) < nargs:
+                handler_args += [None] * (nargs - len(handler_args))
+            handler(*handler_args)
         self.on_raw(nickname, command, args)
 
     # Adds a nickname to channels' nicklists and adds channels
