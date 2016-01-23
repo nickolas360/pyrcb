@@ -19,6 +19,7 @@ from bisect import insort
 from collections import OrderedDict
 from locale import getpreferredencoding
 import errno
+import inspect
 import re
 import socket
 import ssl
@@ -49,8 +50,11 @@ class IRCBot(object):
         self.debug_print = debug_print
         self.print_function = print_function or safe_print
         self.delay = delay
+        self.events = IDefaultDict()
+
         self._first_use = True
         self._init_attr()
+        self._register_events()
 
     # Initializes attributes.
     def _init_attr(self):
@@ -77,6 +81,21 @@ class IRCBot(object):
         self.last_sent = IDefaultDict(lambda: (0, 0))
         self.delay_event = threading.Event()
         self.listen_event = threading.Event()
+
+    # Registers event handlers.
+    def _register_events(self):
+        self.register_event(self._on_001_welcome, "001")
+        self.register_event(self._on_ping, "PING")
+        self.register_event(self._on_join, "JOIN")
+        self.register_event(self._on_part, "PART")
+        self.register_event(self._on_quit, "QUIT")
+        self.register_event(self._on_kick, "KICK")
+        self.register_event(self._on_nick, "NICK")
+        self.register_event(self._on_message, "PRIVMSG")
+        self.register_event(self._on_notice, "NOTICE")
+        self.register_event(self._on_353_namreply, "353")
+        self.register_event(self._on_366_endofnames, "366")
+        self.register_event(self._on_433_nicknameinuse, "433")
 
     # ==================
     # Public IRC methods
@@ -229,9 +248,61 @@ class IRCBot(object):
         """
         self.writeline(IRCBot.format(command, args))
 
-    # =================
-    # Public IRC events
-    # =================
+    # ==================
+    # IRC event handlers
+    # ==================
+
+    def _on_001_welcome(self, *args):
+        self.is_registered = True
+
+    def _on_ping(self, *args):
+        self.send_raw("PONG", args[1:])
+
+    def _on_join(self, nickname, channel):
+        self.add_nickname(nickname, [channel])
+        self.on_join(nickname, IStr(channel))
+
+    def _on_part(self, nickname, channel, message):
+        self.remove_nickname(nickname, [channel])
+        self.on_part(nickname, IStr(channel), message)
+
+    def _on_quit(self, nickname, message):
+        channels = self.remove_nickname(nickname, self.channels)
+        self.on_quit(nickname, message, channels)
+
+    def _on_kick(self, nickname, channel, target, message):
+        self.remove_nickname(target, [channel])
+        self.on_kick(nickname, IStr(channel), IStr(target), message)
+
+    def _on_message(self, nickname, target, message):
+        is_query = (target == self.nickname)
+        channel = None if is_query else IStr(target)
+        self.on_message(message, nickname, channel, is_query)
+
+    def _on_notice(self, nickname, target, message):
+        is_query = (target == self.nickname)
+        channel = None if is_query else IStr(target)
+        self.on_notice(message, nickname, channel, is_query)
+
+    def _on_nick(self, nickname, new_nickname):
+        self.replace_nickname(nickname, new_nickname)
+        self.on_nick(nickname, new_nickname)
+
+    def _on_353_namreply(self, server, target, chan_type, channel, names):
+        names = [IStr(n.lstrip("@+")) for n in names.split()]
+        self._names_buffer[channel] += names
+
+    def _on_366_endofnames(self, server, target, channel, *args):
+        self.nicklist.update(self._names_buffer)
+        for chan, names in self._names_buffer.items():
+            self.on_names(chan, names)
+        if channel not in self._names_buffer:
+            self.on_names(IStr(channel), [])
+        self._names_buffer.clear()
+
+    def _on_433_nicknameinuse(self, *args):
+        if not self.is_registered:
+            raise ValueError("Nickname is already in use.")
 
     def on_join(self, nickname, channel):
         """Called when a user joins a channel. (``JOIN`` command.)
@@ -316,6 +387,33 @@ class IRCBot(object):
     # Other public methods
     # ====================
 
+    def register_event(self, function, command):
+        """Registers an event handler for an IRC command or numeric reply.
+
+        ``function`` should be an instance method of an IRCBot subclass. Its
+        signature should be as follows:
+
+            function(self, nickname[, arg1, arg2, arg3...])
+
+        ``nickname`` (type `IStr`) is the nickname of the user from whom the
+        IRC message/command originated. When handling numeric replies, it may
+        be more appropriate to name this parameter "server".
+
+        Optional parameters after ``nickname`` represent arguments to the IRC
+        command. These are of type `str`, not `IStr`, so if any of the
+        parameters represent channels, nicknames, or any other case-insensitive
+        elements, they should be converted to `IStr`.
+
+        If the number of IRC arguments received is less than the number
+        ``function`` accepts, the remaining function arguments will be set to
+        `None`.  This ensures that IRC commands with an optional last argument
+        will be handled correctly.
+
+        :param callable function: The event handler.
+        :param str command: The IRC command or numeric reply to listen for.
+        """
+        self.events[command] = function
+
     def listen(self):
         """Listens for incoming messages and calls the appropriate events.
 
@@ -385,50 +483,15 @@ class IRCBot(object):
 
     # Parses an IRC message and calls the appropriate event.
     def _handle(self, message):
-        nick, cmd, args = IRCBot.parse(message)
-        if cmd in ["JOIN", "PART", "KICK"]:
-            channel = IStr(args[0])
-
-        if cmd == "001":  # RPL_WELCOME
-            self.is_registered = True
-        elif cmd == "PING":
-            self.send_raw("PONG", args)
-        elif cmd == "JOIN":
-            self.add_nickname(nick, [channel])
-            self.on_join(nick, channel)
-        elif cmd == "PART":
-            self.remove_nickname(nick, [channel])
-            part_msg = (args + [None])[1]
-            self.on_part(nick, channel, part_msg)
-        elif cmd == "QUIT":
-            channels = self.remove_nickname(nick, self.channels)
-            self.on_quit(nick, args[-1], channels)
-        elif cmd == "KICK":
-            self.remove_nickname(args[1], [channel])
-            self.on_kick(nick, channel, IStr(args[1]), args[-1])
-        elif cmd == "NICK":
-            self.replace_nickname(nick, args[0])
-            self.on_nick(nick, IStr(args[0]))
-        elif cmd in ["PRIVMSG", "NOTICE"]:
-            is_query = args[0] == self.nickname
-            channel = (IStr(args[0]), None)[is_query]
-            [self.on_message, self.on_notice][cmd == "NOTICE"](
-                args[-1], nick, channel, is_query)
-        elif cmd == "353":  # RPL_NAMREPLY
-            channel = IStr(args[2])
-            names = [IStr(n.lstrip("@+")) for n in args[-1].split()]
-            self._names_buffer[channel] += names
-        elif cmd == "366":  # RPL_ENDOFNAMES
-            self.nicklist.update(self._names_buffer)
-            for channel, names in self._names_buffer.items():
-                self.on_names(channel, names)
-            if args[1] not in self._names_buffer:
-                self.on_names(IStr(args[1]), [])
-            self._names_buffer.clear()
-        elif cmd == "433":  # ERR_NICKNAMEINUSE
-            if not self.is_registered:
-                raise ValueError("Nickname is already in use.")
-        self.on_raw(nick, cmd, args)
+        nickname, command, args = IRCBot.parse(message)
+        if command in self.events:
+            func = self.events[command]
+            func_args = [nickname] + args
+            nargs = len(inspect.getargspec(func).args) - 1
+            if len(func_args) < nargs:
+                func_args += [None] * (nargs - len(func_args))
+            func(*func_args)
+        self.on_raw(nickname, command, args)
 
     # Adds a nickname to channels' nicklists and adds channels
     # to the list of channels if this bot is being added.
