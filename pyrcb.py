@@ -29,6 +29,14 @@ import time
 
 __version__ = "1.7.8"
 
+# ustr is unicode in Python 2 (because of unicode_literals)
+# and str in Python 3.
+ustr = type("")
+
+# Use time.monotonic() if available (Python >= 3.3) to avoid problems with
+# system time changes and leap seconds.
+best_clock = getattr(time, "monotonic", time.time)
+
 
 class IRCBot(object):
     """The base class for IRC bots.
@@ -52,15 +60,25 @@ class IRCBot(object):
         self.delay = delay
         self.events = IDefaultDict()
 
+        # Multiplied by the number of consecutive messages sent to determine
+        # how many seconds to wait before sending the next one.
+        self.delay_multiplier = 0.1
+
+        # The maximum number of seconds to wait before sending a message.
+        self.max_delay = 1.5
+
+        # How many seconds must pass before a message is not considered
+        # consecutive.
+        self.consecutive_timeout = 5
+
         self._first_use = True
-        self._init_attr()
+        self._init_attributes()
         self._register_events()
 
     # Initializes attributes.
-    def _init_attr(self):
+    def _init_attributes(self):
         self._buffer = ""
         self.socket = socket.socket()
-
         self.hostname = None
         self.port = None
 
@@ -73,11 +91,12 @@ class IRCBot(object):
         self.old_nicklist = IDefaultDict(list)
         self.nicklist = IDefaultDict(list)
 
-        # Buffer of delayed messages. Stores tuples of
-        # the time to be sent and the message text.
+        # Buffer of delayed messages. Stores tuples of the time
+        # to be sent and the message text.
         self._delay_buffer = []
+
         # Maps a channel/nickname to the time of the most recent message
-        # sent and how many messages without a break have been sent.
+        # sent and how many consecutive messages have been sent.
         self.last_sent = IDefaultDict(lambda: (0, 0))
         self.delay_event = threading.Event()
         self.listen_event = threading.Event()
@@ -101,8 +120,8 @@ class IRCBot(object):
     # Public IRC methods
     # ==================
 
-    def connect(self, hostname, port, use_ssl=False,
-                ca_certs=None, verify_ssl=True):
+    def connect(self, hostname, port, use_ssl=False, ca_certs=None,
+                verify_ssl=True):
         """Connects to an IRC server.
 
         SSL/TLS support requires at least Python 3.2 or Python 2.7.9. On
@@ -113,14 +132,14 @@ class IRCBot(object):
         :param str hostname: The hostname of the IRC server.
         :param int port: The port of the IRC server.
         :param bool use_ssl: Whether or not to use SSL/TLS.
-        :param str ca_certs: Optional path to a list of trusted CA certificates
-          (to be passed to :func:`ssl.wrap_socket`). If omitted, the system's
-          default CA certificates will be loaded.
+        :param str ca_certs: Optional path to a list of trusted CA
+          certificates. If omitted, the system's default CA certificates will
+          be loaded instead.
         :param bool verify_ssl: Whether or not to verify the server's SSL/TLS
           certificate and hostname.
         """
         if not self._first_use:
-            self._init_attr()
+            self._init_attributes()
         self._first_use = False
 
         self.hostname = hostname
@@ -562,12 +581,12 @@ class IRCBot(object):
             return
 
         last_time, consecutive = self.last_sent[target]
-        last_delta = time.time() - last_time
-        if last_delta >= 5:
+        last_delta = best_clock() - last_time
+        if last_delta >= self.consecutive_timeout:
             consecutive = 0
 
-        delay = min(consecutive / 10, 1.5)
-        message_time = max(last_time, time.time()) + delay
+        delay = min(consecutive * self.delay_multiplier, self.max_delay)
+        message_time = max(last_time, best_clock()) + delay
         self.last_sent[target] = (message_time, consecutive + 1)
 
         insort(self._delay_buffer, (message_time, (command, args)))
@@ -580,7 +599,7 @@ class IRCBot(object):
             if any(self._delay_buffer):
                 # Get the oldest message.
                 message_time, (command, args) = self._delay_buffer[0]
-                delay = message_time - time.time()
+                delay = message_time - best_clock()
 
                 # If there is no delay or the program finishes
                 # waiting for the delay, send the message.
