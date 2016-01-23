@@ -551,19 +551,21 @@ class IRCBot(object):
     # Formats an IRC message.
     @staticmethod
     def format(command, args=[]):
-        str_args = list(map(str, args))
-        if any(arg is None for arg in args):
-            raise ValueError("Arguments cannot be None.")
-        if not all(str_args):
-            raise ValueError("Arguments cannot be empty strings.")
-        if any(any(c in arg for c in "\0\r\n") for arg in str_args):
-            raise ValueError(r"Arguments cannot contain '\0', '\r', or '\n'.")
-        if any(any(c in arg for c in " :") for arg in str_args[:-1]):
-            raise ValueError("Only the last argument can contain ' ' or ':'.")
-        if str_args:
-            str_args[-1] = ":" + str_args[-1]
-            return command + " " + " ".join(str_args)
-        return command
+        command = str(command)
+        args = list(map(str, args))
+        if not all(args + [command]):
+            raise ValueError("Command/args may not be empty strings.")
+        if not re.match(r"^[a-zA-Z0-9]+$", command):
+            raise ValueError("Command must be alphanumeric.")
+        if not all(re.match(r"^[^\0\r\n]+$", arg) for arg in args):
+            raise ValueError(r"Arguments may not contain [\0\r\n].")
+        if any(arg[0] == ":" for arg in args[:-1]):
+            raise ValueError("Only the last argument may start with ':'.")
+        if any(" " in arg for arg in args[:-1]):
+            raise ValueError("Only the last argument may contain ' '.")
+        if args:
+            args[-1] = ":" + args[-1]
+        return " ".join([command] + args)
 
     # Adds a delayed message, or sends the message if delays are off.
     def add_delayed(self, target, command, args):
