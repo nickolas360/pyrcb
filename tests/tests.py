@@ -337,6 +337,21 @@ class TestEvents(BaseTest):
         self.assertEventCalled(
             on_raw, "nick", "COMMAND", ["arg1", "arg2", "arg with spaces"])
 
+    def test_register_event(self):
+        # Can't use mocks because IRCBot._handle() looks up the function
+        # signatures of event handlers.
+        def handler1(nickname, arg1, arg2):
+            handler1.call_args = [nickname, arg1, arg2]
+
+        def handler2(nickname, arg1, arg2, arg3):
+            handler2.call_args = [nickname, arg1, arg2, arg3]
+
+        self.bot.register_event(handler1, "CUSTOMCMD")
+        self.bot.register_event(handler2, "CUSTOMCMD")
+        self.handle_line(":nick CUSTOMCMD a1 :a2")
+        self.assertEqual(handler1.call_args, ["nick", "a1", "a2"])
+        self.assertEqual(handler2.call_args, ["nick", "a1", "a2", None])
+
 
 class TestConnect(BaseTest):
     def setUp(self):
