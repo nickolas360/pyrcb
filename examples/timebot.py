@@ -1,4 +1,4 @@
-# Written in 2015 by nickolas360 (https://github.com/nickolas360)
+# Written in 2015-2016 by nickolas360 <contact@nickolas360.com>
 #
 # To the extent possible under law, the author(s) have
 # dedicated all copyright and related and neighboring

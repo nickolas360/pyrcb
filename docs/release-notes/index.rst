@@ -1,4 +1,4 @@
-.. Copyright (C) 2015 nickolas360 (https://github.com/nickolas360)
+.. Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
 
 .. This file is part of pyrcb-docs, documentation for pyrcb.
 

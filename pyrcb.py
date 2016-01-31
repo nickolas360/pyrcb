@@ -1,4 +1,4 @@
-# Copyright (C) 2015 nickolas360 (https://github.com/nickolas360)
+# Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
