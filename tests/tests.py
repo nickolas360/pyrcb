@@ -24,10 +24,12 @@ from collections import Counter
 import pyrcb
 import unittest
 import errno
+import inspect
 import socket
 import ssl
 import sys
 import threading
+import warnings
 
 try:
     from unittest import mock
@@ -352,6 +354,13 @@ class TestEvents(BaseTest):
         self.handle_line(":nick CUSTOMCMD a1 :a2")
         self.assertEqual(handler1.call_args, ["nick", "a1", "a2"])
         self.assertEqual(handler2.call_args, ["nick", "a1", "a2", None])
+
+    def test_register_event_no_signature(self):
+        if hasattr(inspect, "signature"):
+            with mock.patch.object(inspect, "signature"):
+                del inspect.signature
+                with warnings.catch_warnings(record=True):
+                    self.test_register_event()
 
 
 class TestConnect(BaseTest):

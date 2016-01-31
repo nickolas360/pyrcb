@@ -116,45 +116,9 @@ class IRCBot(object):
         self.register_event(self._on_366_endofnames, "366")
         self.register_event(self._on_433_nicknameinuse, "433")
 
-    # ==================
-    # Public IRC methods
-    # ==================
-
-    def connect(self, hostname, port, use_ssl=False, ca_certs=None,
-                verify_ssl=True):
-        """Connects to an IRC server.
-
-        SSL/TLS support requires at least Python 3.2 or Python 2.7.9. On
-        Windows, system CA certificates cannot be loaded with Python 3.2 or
-        3.3, so either ``ca_certs`` must be provided or ``verify_ssl`` must be
-        false.
-
-        :param str hostname: The hostname of the IRC server.
-        :param int port: The port of the IRC server.
-        :param bool use_ssl: Whether or not to use SSL/TLS.
-        :param str ca_certs: Optional path to a list of trusted CA
-          certificates. If omitted, the system's default CA certificates will
-          be loaded instead.
-        :param bool verify_ssl: Whether or not to verify the server's SSL/TLS
-          certificate and hostname.
-        """
-        if not self._first_use:
-            self._init_attributes()
-        self._first_use = False
-
-        self.hostname = hostname
-        self.port = port
-        self.socket.connect((hostname, port))
-
-        if use_ssl:
-            self.socket = wrap_socket(
-                self.socket, hostname, ca_certs, verify_ssl)
-
-        self.alive = True
-        if self.delay:
-            t = threading.Thread(target=self.delay_loop)
-            t.daemon = True
-            t.start()
+    # ===================
+    # Public IRC commands
+    # ===================
 
     def password(self, password):
         """Sets a connection password. (``PASS`` command.)
@@ -394,35 +358,41 @@ class IRCBot(object):
     # Other public methods
     # ====================
 
-    def register_event(self, function, command):
-        """Registers an event handler for an IRC command or numeric reply.
+    def connect(self, hostname, port, use_ssl=False, ca_certs=None,
+                verify_ssl=True):
+        """Connects to an IRC server.
 
-        ``function`` should be an instance method of an IRCBot subclass. Its
-        signature should be as follows:
+        SSL/TLS support requires at least Python 3.2 or Python 2.7.9. On
+        Windows, system CA certificates cannot be loaded with Python 3.2 or
+        3.3, so either ``ca_certs`` must be provided or ``verify_ssl`` must be
+        false.
 
-            function(self, nickname[, arg1, arg2, arg3...])
-
-        ``nickname`` (type `IStr`) is the nickname of the user from whom the
-        IRC message/command originated. When handling numeric replies, it may
-        be more appropriate to name this parameter "server".
-
-        Optional parameters after ``nickname`` represent arguments to the IRC
-        command. These are of type `str`, not `IStr`, so if any of the
-        parameters represent channels, nicknames, or any other case-insensitive
-        elements, they should be converted to `IStr`.
-
-        If the number of IRC arguments received is less than the number
-        ``function`` accepts, the remaining function arguments will be set to
-        `None`.  This ensures that IRC commands with an optional last argument
-        will be handled correctly.
-
-        Multiple events can be registered for the same IRC command, but is
-        usually isn't necessary to do this.
-
-        :param callable function: The event handler.
-        :param str command: The IRC command or numeric reply to listen for.
+        :param str hostname: The hostname of the IRC server.
+        :param int port: The port of the IRC server.
+        :param bool use_ssl: Whether or not to use SSL/TLS.
+        :param str ca_certs: Optional path to a list of trusted CA
+          certificates. If omitted, the system's default CA certificates will
+          be loaded instead.
+        :param bool verify_ssl: Whether or not to verify the server's SSL/TLS
+          certificate and hostname.
         """
-        self.events[command].append(function)
+        if not self._first_use:
+            self._init_attributes()
+        self._first_use = False
+
+        self.hostname = hostname
+        self.port = port
+        self.socket.connect((hostname, port))
+
+        if use_ssl:
+            self.socket = wrap_socket(
+                self.socket, hostname, ca_certs, verify_ssl)
+
+        self.alive = True
+        if self.delay:
+            t = threading.Thread(target=self.delay_loop)
+            t.daemon = True
+            t.start()
 
     def listen(self):
         """Listens for incoming messages and calls the appropriate events.
@@ -476,6 +446,37 @@ class IRCBot(object):
         """
         return self.listen_event.wait(timeout)
 
+    def register_event(self, function, command):
+        """Registers an event handler for an IRC command or numeric reply.
+
+        ``function`` should be an instance method of an IRCBot subclass. Its
+        signature should be as follows::
+
+            function(self, nickname[, arg1, arg2, arg3...])
+
+        ``nickname`` (type `IStr`) is the nickname of the user from whom the
+        IRC message/command originated. When handling numeric replies, it may
+        be more appropriate to name this parameter "server".
+
+        Optional parameters after ``nickname`` represent arguments to the IRC
+        command. These are of type `str`, not `IStr`, so if any of the
+        parameters represent channels or nicknames, they should be converted to
+        `IStr`.
+
+        If the number of IRC arguments received is less than the number
+        ``function`` accepts, the remaining function arguments will be set to
+        `None`.  This ensures that IRC commands with an optional last argument
+        will be handled correctly.
+
+        Multiple events can be registered for the same IRC command, but is
+        usually isn't necessary to do this.
+
+        :param callable function: The event handler.
+        :param str command: The IRC command or numeric reply to listen for.
+        """
+        nargs = get_required_args(function)
+        self.events[command].append((function, nargs))
+
     # ===============
     # Private methods
     # ===============
@@ -497,13 +498,8 @@ class IRCBot(object):
     # Parses an IRC message and calls the appropriate events.
     def _handle(self, message):
         nickname, command, args = IRCBot.parse(message)
-        for handler in self.events.get(command, []):
+        for handler, nargs in self.events.get(command, []):
             handler_args = [nickname] + args
-            nargs = len(inspect.getargspec(handler).args)
-
-            # Check if handler is a bound method.
-            if hasattr(handler, "__self__"):
-                nargs -= 1
 
             # Fill in any extra arguments with None.
             if len(handler_args) < nargs:
@@ -640,6 +636,28 @@ class IRCBot(object):
         finally:
             self.alive = False
             self.delay_event.set()
+
+
+# Gets the number of required positional arguments of a function.
+# Does not include the "self" parameter for bound methods.
+def get_required_args(func):
+    result = 0
+    if hasattr(inspect, "signature"):
+        sig = inspect.signature(func)
+        for param in sig.parameters.values():
+            is_positional = param.kind in [
+                inspect.Parameter.POSITIONAL_ONLY,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD]
+            no_default = param.default is inspect.Parameter.empty
+            if is_positional and no_default:
+                result += 1
+        return result
+    spec = getattr(inspect, "getfullargspec", inspect.getargspec)(func)
+    result = len(spec.args) - len(spec.defaults or [])
+    # Don't include the "self" parameter for bound methods.
+    if hasattr(func, "__self__"):
+        result -= 1
+    return result
 
 
 # Wraps a plain socket into an SSL one. Attempts to load default CA
