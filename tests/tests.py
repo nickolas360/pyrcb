@@ -343,11 +343,12 @@ class TestEvents(BaseTest):
         def handler1(nickname, arg1, arg2):
             handler1.call_args = [nickname, arg1, arg2]
 
-        def handler2(nickname, arg1, arg2, arg3):
+        def handler2(self, nickname, arg1, arg2, arg3):
             handler2.call_args = [nickname, arg1, arg2, arg3]
 
+        bound = handler2.__get__(self.bot)
         self.bot.register_event(handler1, "CUSTOMCMD")
-        self.bot.register_event(handler2, "CUSTOMCMD")
+        self.bot.register_event(bound, "CUSTOMCMD")
         self.handle_line(":nick CUSTOMCMD a1 :a2")
         self.assertEqual(handler1.call_args, ["nick", "a1", "a2"])
         self.assertEqual(handler2.call_args, ["nick", "a1", "a2", None])
