@@ -50,9 +50,9 @@ class IRCBot(object):
       should be printed.
     :param callable print_function: An optional function to be used with
       ``debug_print``. Should accept a single unicode string argument.
-      Otherwise, communication is printed to stdout.
+      If not provided, communication is printed to stdout.
     :param bool delay: Whether or not sent messages should be delayed to avoid
-      server throttling or spam prevention.
+      server throttling or spam prevention. See :ref:`delay-options`.
     """
     def __init__(self, debug_print=False, print_function=None, delay=True):
         self.debug_print = debug_print
@@ -738,28 +738,31 @@ def idefaultdict_methods(cls):
 class IStr(ustr):
     """Bases: `str` (or `unicode` in Python 2)
 
-    A case-insensitive string class based on `IRC case rules`_.
+    A case-insensitive string class based on `IRC case rules`_. (``{}|^`` are
+    lowercase equivalents of ``[]\~``.)
 
     Equality comparisons are case-insensitive, but the original string is
     preserved. `str` (or `unicode`) can be used to obtain a case-sensitive
     version of the string. For example::
 
-        >>> IStr("string") == "string"
+        >>> IStr("STRing^") == "string^"
         True
-        >>> IStr("string") == "STRING"
+        >>> IStr("STRing^") == "STRING~"
         True
-        >>> str(IStr("string")) == "STRING"
+        >>> str(IStr("STRing^")) == "STRING~"
         False
 
-    All ``nickname``, ``channel``, and ``target`` parameters in IRCBot events
-    are of type `IStr`, so they can be tested for equality without worrying
-    about case-sensitivity.
+    Throughout pyrcb, all parameters and attributes that represent nicknames or
+    channels are of type `IStr`, so they can be tested for equality without
+    worrying about case-sensitivity.
 
     Arguments are passed to and handled by `str`. This class behaves just like
     `str` (or `unicode`), except for equality comparisons and methods which
     rely on equality comparisons, such as :meth:`str.index`.
 
-    IRC case rules state that ``{}|^`` are lowercase equivalents of ``[]\~``.
+    When used as keys in dictionaries, IStr objects will act like the lowercase
+    version of the string they represent. If you want a case-insensitive
+    dictionary, use `IDefaultDict`.
 
     .. _IRC case rules: https://tools.ietf.org/html/rfc2812#section-2.2
     """

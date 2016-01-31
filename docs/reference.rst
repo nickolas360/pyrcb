@@ -1,4 +1,4 @@
-.. Copyright (C) 2015 nickolas360 (https://github.com/nickolas360)
+.. Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
 
 .. This file is part of pyrcb-docs, documentation for pyrcb.
 
@@ -25,10 +25,13 @@ IRCBot
 
 .. autoclass:: IRCBot
 
-Methods
-~~~~~~~
+IRC commands
+~~~~~~~~~~~~
 
-.. automethod:: IRCBot.connect
+.. seealso::
+
+   To learn how to send custom IRC commands, see :doc:`custom-commands`.
+
 .. automethod:: IRCBot.password
 .. automethod:: IRCBot.register
 .. automethod:: IRCBot.join
@@ -39,20 +42,29 @@ Methods
 .. automethod:: IRCBot.nick
 .. automethod:: IRCBot.names
 .. automethod:: IRCBot.send_raw
+
+Other methods
+~~~~~~~~~~~~~
+
+.. automethod:: IRCBot.connect
 .. automethod:: IRCBot.listen
 .. automethod:: IRCBot.listen_async
 .. automethod:: IRCBot.wait
+.. automethod:: IRCBot.register_event
 
 Events
 ~~~~~~
 
+.. seealso::
+
+   To learn how to handle custom IRC commands, see :doc:`custom-commands`.
+
 .. note::
 
-   All ``nickname``, ``channel``, and ``target`` parameters in events are
+   In events, all parameters that represent nicknames or channels are
    case-insensitive strings (type `IStr`). This means that equality comparisons
    with those parameters are case-insensitive, so you don't have to call
-   :meth:`~str.lower` on them first. (The attributes `~IRCBot.nickname`,
-   `~IRCBot.channels`, and `~IRCBot.names` are also case-insensitive.)
+   :meth:`~str.lower` on them first.
 
    Case-insensitive strings abide by `IRC case rules`_, which state that
    ``{}|^`` are lowercase equivalents of ``[]\~``. See `IStr` for more info.
@@ -72,69 +84,100 @@ Events
 Attributes
 ~~~~~~~~~~
 
+`IRCBot` instances have the following attributes. These should not be changed,
+except for ones under :ref:`delay-options`.
+
 .. attribute:: IRCBot.hostname
 
    The hostname of the IRC server this bot is connected to.
 
-   :type: :class:`str`
+   :type: `str`
 
 .. attribute:: IRCBot.port
 
-    The port of the IRC server this bot is connected to.
+   The port of the IRC server this bot is connected to.
 
-    :type: :class:`int`
+   :type: `int`
 
 .. attribute:: IRCBot.alive
 
-    Whether or not this bot is connected to an IRC server.
+   Whether or not this bot is connected to an IRC server.
 
-    For infinite loops, use ``while IRCBot.alive`` instead of ``while True``,
-    so the loop stops when the bot loses connection. Use :meth:`IRCBot.wait()`
-    instead of :func:`time.sleep` as well.
+   For infinite loops, use ``while IRCBot.alive`` instead of ``while True``,
+   so the loop stops when the bot loses connection. Use :meth:`IRCBot.wait()`
+   instead of :func:`time.sleep` as well.
 
-    :type: :class:`bool`
+   :type: `bool`
 
 .. attribute:: IRCBot.is_registered
 
-    Whether or not this bot has registered with the IRC server.
+   Whether or not this bot has registered with the IRC server.
 
-    :type: :class:`bool`
+   :type: `bool`
 
 .. attribute:: IRCBot.nickname
 
-    The nickname of this bot (case-insensitive).
+   The nickname of this bot (case-insensitive).
 
-    :type: :class:`IStr`
+   :type: `IStr`
 
 .. attribute:: IRCBot.channels
 
-    A list of channels this bot is in (case-insensitive). Channels are of type
-    :class:`IStr`.
+   A list of channels this bot is in (case-insensitive). Channels are of type
+   :class:`IStr`.
 
-    :type: :class:`list`
+   :type: `list` of `IStr`
 
 .. attribute:: IRCBot.nicklist
 
-    A dictionary which maps channel names to lists of the nicknames of users in
-    those channels.
+   A dictionary which maps channel names to lists of the nicknames of users in
+   those channels.
 
-    For example::
+   For example::
 
-        >>> IRCBot.nicklist["#channel-name"]
-        ["nickname0", "nickname1", "nickname2"]
+      >>> IRCBot.nicklist["#channel-name"]
+      ["nickname1", "nickname2", "nickname3"]
 
-    Keys are case-insensitive, as are the nicknames retrieved from the a
-    dictionary lookup. If there is no list of nicknames for a particular
-    channel, a dictionary lookup will return an empty list instead of producing
-    an error.
+   Keys are case-insensitive, as are the nicknames retrieved from the a
+   dictionary lookup. If there is no list of nicknames for a particular
+   channel, a dictionary lookup will return an empty list instead of producing
+   an error.
 
-    :type: :class:`IDefaultDict`
+   :type: `IDefaultDict`; maps `str` to `list` of `IStr`
+
+.. _delay-options:
+
+Delay options
+^^^^^^^^^^^^^
+
+The following instance attributes are related to the ``delay`` parameter of
+`IRCBot`'s constructor. These may be changed.
+
+.. attribute:: IRCBot.delay_multiplier
+
+   Multiplied by the number of consecutive messages sent to determine how many
+   seconds to wait before sending the next one. (Default: 0.1).
+
+   :type: `float`
+
+.. attribute:: IRCBot.max_delay
+
+   The maximum number of seconds to wait before sending a message. (Default:
+   1.5).
+
+   :type: `float`
+
+.. attribute:: IRCBot.consecutive_timeout
+
+   How many seconds must pass before a message is not considered consecutive.
+   (Default: 5).
+
+   :type: `float`
 
 IStr
 ----
 
 .. autoclass:: IStr()
-
 
 IDefaultDict
 ------------
