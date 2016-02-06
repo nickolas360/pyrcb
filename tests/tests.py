@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
 # Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -123,34 +124,11 @@ class TestCommands(BaseTest):
         super(TestCommands, self).setUp()
         self.bot = IRCBot(delay=False)
         self.bot.connect("example.com", 6667)
+        self.register_bot("self")
 
     def test_password(self):
         self.bot.password("test-password")
         self.assertSent("PASS :test-password")
-
-    def test_register(self):
-        self.from_server(":server 001 test-nickname :Welcome")
-        self.bot.register("test-nickname")
-        self.assertSent(
-            "USER test-nickname 8 * :test-nickname",
-            "NICK :test-nickname")
-
-    def test_register_realname(self):
-        self.from_server(":server 001 test-nickname :Welcome")
-        self.bot.register("test-nickname", "test-realname")
-        self.assertSent(
-            "USER test-nickname 8 * :test-realname",
-            "NICK :test-nickname")
-
-    def test_register_nickname_in_use(self):
-        self.from_server(":server 433 * test-nickname :Nickname in use")
-        with self.assertRaises(ValueError):
-            self.bot.register("test-nickname")
-
-    def test_register_connection_lost(self):
-        self.from_server()
-        with self.assertRaises(IOError):
-            self.bot.register("test-nickname")
 
     def test_join(self):
         self.bot.join("#test-channel")
@@ -177,6 +155,28 @@ class TestCommands(BaseTest):
     def test_send_notice(self):
         self.bot.send_notice("test-target", "Test notice")
         self.assertSent("NOTICE test-target :Test notice")
+
+    def test_send_split(self):
+        message = " ".join(["test§"] * 100)
+
+        # Should split on whitespace to avoid breaking words.
+        self.bot.send("testnick", message)
+        self.assertSent(
+            "PRIVMSG testnick :" + " ".join(["test§"] * 58),
+            "PRIVMSG testnick :" + " ".join(["test§"] * 42),
+        )
+
+        # Should break words.
+        self.bot.send("testnick", message, nobreak=False)
+        self.assertSent(
+            "PRIVMSG testnick :" + " ".join(["test§"] * 58) + " test",
+            "PRIVMSG testnick :" + "§ " + " ".join(["test§"] * 41),
+        )
+
+        # The nickname alone pushes the message over 512 bytes,
+        # so the message should be sent without any splitting.
+        self.bot.send("a" * 1000, "Test message")
+        self.assertSent("PRIVMSG " + "a" * 1000 + " :Test message")
 
     def test_nick(self):
         self.bot.nick("new-test-nickname")
@@ -389,6 +389,30 @@ class TestConnect(BaseTest):
         context = ssl.SSLContext()
         self.assertCalledOnce(context.load_verify_locations, cafile="/test")
 
+    def test_register(self):
+        self.from_server(":server 001 test-nickname :Welcome")
+        self.bot.register("test-nickname")
+        self.assertSent(
+            "USER test-nickname 8 * :test-nickname",
+            "NICK :test-nickname")
+
+    def test_register_realname(self):
+        self.from_server(":server 001 test-nickname :Welcome")
+        self.bot.register("test-nickname", "test-realname")
+        self.assertSent(
+            "USER test-nickname 8 * :test-realname",
+            "NICK :test-nickname")
+
+    def test_register_nickname_in_use(self):
+        self.from_server(":server 433 * test-nickname :Nickname in use")
+        with self.assertRaises(ValueError):
+            self.bot.register("test-nickname")
+
+    def test_register_connection_lost(self):
+        self.from_server()
+        with self.assertRaises(IOError):
+            self.bot.register("test-nickname")
+
     def test_reuse(self):
         self.bot.connect("example.com", 6667)
         self.register_bot("test")
@@ -514,6 +538,24 @@ class TestMisc(BaseTest):
             IRCBot.format("CMD", [":arg1", "arg2"])
         with self.assertRaises(ValueError):
             IRCBot.format("CMD", ["arg one", "arg two"])
+
+    def test_split_message(self):
+        split = IRCBot.split_string("test§ test", 10)
+        self.assertEqual(split, ["test§", "test"])
+        split = IRCBot.split_string("test§ test", 6)
+        self.assertEqual(split, ["test§", "test"])
+        split = IRCBot.split_string("test§test", 5)
+        self.assertEqual(split, ["test", "§tes", "t"])
+        with self.assertRaises(ValueError):
+            IRCBot.split_string("test", 0)
+
+    def test_safe_message_length(self):
+        self.bot = IRCBot()
+        self.bot.nickname = "self"
+        # :self!<user>@<host> PRIVMSG testnick :<message>\r\n
+        # <user> is max 10 bytes, <host> is max 63 bytes
+        # 411 bytes left for <message>
+        self.assertEqual(self.bot.safe_message_length("testnick"), 411)
 
     def test_debug_print(self):
         self.bot = IRCBot(debug_print=True)
