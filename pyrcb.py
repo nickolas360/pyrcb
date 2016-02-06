@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -39,10 +40,8 @@ best_clock = getattr(time, "monotonic", time.time)
 
 
 class IRCBot(object):
-    """The base class for IRC bots.
-
-    IRC bots should inherit from this class and override any events they wish
-    to handle.
+    """The base class for IRC bots. IRC bots should inherit from this class and
+    override any events they wish to handle.
 
     Instances of this class are reusable.
 
@@ -116,12 +115,12 @@ class IRCBot(object):
         self.register_event(self._on_366_endofnames, "366")
         self.register_event(self._on_433_nicknameinuse, "433")
 
-    # ===================
-    # Public IRC commands
-    # ===================
+    # ============
+    # IRC commands
+    # ============
 
     def password(self, password):
-        """Sets a connection password. (``PASS`` command.)
+        """Sets a connection password. (``PASS`` command)
 
         This method can be used to identify with NickServ.
 
@@ -149,7 +148,7 @@ class IRCBot(object):
             self._handle(line)
 
     def join(self, channel):
-        """Joins a channel. (``JOIN`` command.)
+        """Joins a channel. (``JOIN`` command)
 
         :param str channel: The channel to join. Must start with the channel
           prefix.
@@ -157,7 +156,7 @@ class IRCBot(object):
         self.send_raw("JOIN", [channel])
 
     def part(self, channel, message=None):
-        """Leaves a channel. (``PART`` command.)
+        """Leaves a channel. (``PART`` command)
 
         :param str channel: The channel to leave. Must start with the channel
           prefix.
@@ -166,7 +165,7 @@ class IRCBot(object):
         self.send_raw("PART", filter(None, [channel, message]))
 
     def quit(self, message=None):
-        """Disconnects from the server. (``QUIT`` command.)
+        """Disconnects from the server. (``QUIT`` command)
 
         :param str message: An optional quit message.
         """
@@ -175,33 +174,45 @@ class IRCBot(object):
         finally:
             self.close_socket()
 
-    def send(self, target, message):
-        """Sends a message to a channel or user. (``PRIVMSG`` command.)
+    def send(self, target, message, split=True, nobreak=True):
+        """Sends a message to a channel or user. (``PRIVMSG`` command)
 
-        :param str target: The recipient of the message: either a channel or
-          the nickname of a user.
+        :param str target: The recipient of the message (either a channel or a
+          nickname).
         :param str message: The message to send.
+        :param bool split: If true, long messages will be split into multiple
+          pieces to avoid truncation. See :meth:`IRCBot.split_string`.
+        :param bool nobreak: If true (and ``split`` is true), long messages
+          will be split only where whitespace occurs to avoid breaking words,
+          unless this is not possible.
         """
-        self.add_delayed(target, "PRIVMSG", [target, message])
+        self._privmsg_or_notice(
+            target, message, split, nobreak, notice=False)
 
-    def send_notice(self, target, message):
-        """Sends a notice to a channel or user. (``NOTICE`` command.)
+    def send_notice(self, target, message, split=True, nobreak=True):
+        """Sends a notice to a channel or user. (``NOTICE`` command)
 
-        :param str target: The recipient of the notice: either a channel or the
-          nickname or a user.
+        :param str target: The recipient of the notice (either a channel or a
+          nickname).
         :param str notice: The notice to send.
+        :param bool split: If true, long messages will be split into multiple
+          pieces to avoid truncation. See :meth:`IRCBot.split_string`.
+        :param bool nobreak: If true (and ``split`` is true), long messages
+          will be split only where whitespace occurs to avoid breaking words,
+          unless this is not possible.
         """
-        self.add_delayed(target, "NOTICE", [target, message])
+        self._privmsg_or_notice(
+            target, message, split, nobreak, notice=True)
 
     def nick(self, new_nickname):
-        """Changes the bot's nickname. (``NICK`` command.)
+        """Changes the bot's nickname. (``NICK`` command)
 
         :param str new_nickname: The bot's new nickname.
         """
         self.send_raw("NICK", [new_nickname])
 
     def names(self, channel):
-        """Requests a list of users in a channel. (``NAMES`` command.)
+        """Requests a list of users in a channel. (``NAMES`` command)
 
         Calling this method is usually unnecessary because bots automatically
         keep track of users in joined channels. See `IRCBot.nicklist`.
@@ -219,11 +230,24 @@ class IRCBot(object):
         """
         self.writeline(IRCBot.format(command, args))
 
+    def _privmsg_or_notice(self, target, message, split, nobreak, notice):
+        messages = [message]
+        if split:
+            bytelen = self.safe_message_length(target, notice=notice)
+            try:
+                messages = IRCBot.split_string(message, bytelen, nobreak)
+            except ValueError:
+                pass
+        command = ["PRIVMSG", "NOTICE"][notice]
+        for msg in messages:
+            self.add_delayed(target, command, [target, msg])
+
     # ==================
     # IRC event handlers
     # ==================
 
-    def _on_001_welcome(self, *args):
+    def _on_001_welcome(self, server, nickname, *args):
+        self.nickname = IStr(nickname)
         self.is_registered = True
 
     def _on_ping(self, *args):
@@ -276,14 +300,14 @@ class IRCBot(object):
             raise ValueError("Nickname is already in use.")
 
     def on_join(self, nickname, channel):
-        """Called when a user joins a channel. (``JOIN`` command.)
+        """Called when a user joins a channel. (``JOIN`` command)
 
         :param IStr nickname: The nickname of the user.
         :param IStr channel: The channel being joined.
         """
 
     def on_part(self, nickname, channel, message):
-        """Called when a user leaves a channel. (``PART`` command.)
+        """Called when a user leaves a channel. (``PART`` command)
 
         :param IStr nickname: The nickname of the user.
         :param IStr channel: The channel being left.
@@ -291,7 +315,7 @@ class IRCBot(object):
         """
 
     def on_quit(self, nickname, message, channels):
-        """Called when a user disconnects from the server. (``QUIT`` command.)
+        """Called when a user disconnects from the server. (``QUIT`` command)
 
         :param IStr nickname: The nickname of the user.
         :param str message: The quit message.
@@ -299,7 +323,7 @@ class IRCBot(object):
         """
 
     def on_kick(self, nickname, channel, target, message):
-        """Called when a user is kicked from a channel. (``KICK`` command.)
+        """Called when a user is kicked from a channel. (``KICK`` command)
 
         :param IStr nickname: The nickname of the user who is kicking someone.
         :param IStr channel: The channel someone is being kicked from.
@@ -309,7 +333,7 @@ class IRCBot(object):
         """
 
     def on_message(self, message, nickname, channel, is_query):
-        """Called when a message is received. (``PRIVMSG`` command.)
+        """Called when a message is received. (``PRIVMSG`` command)
 
         :param str message: The text of the message.
         :param IStr nickname: The nickname of the user who sent the message.
@@ -320,7 +344,7 @@ class IRCBot(object):
         """
 
     def on_notice(self, message, nickname, channel, is_query):
-        """Called when a notice is received. (``NOTICE`` command.)
+        """Called when a notice is received. (``NOTICE`` command)
 
         :param str message: The text of the notice.
         :param IStr nickname: The nickname of the user who sent the notice.
@@ -331,7 +355,7 @@ class IRCBot(object):
         """
 
     def on_nick(self, nickname, new_nickname):
-        """Called when a user changes nicknames. (``NICK`` command.)
+        """Called when a user changes nicknames. (``NICK`` command)
 
         :param IStr nickname: The user's old nickname.
         :param IStr new_nickname: The user's new nickname.
@@ -441,8 +465,8 @@ class IRCBot(object):
         bot loses connection, so the program can respond appropriately or end.
 
         :param float timeout: A timeout for the operation in seconds.
-        :returns: `True` if the method returned because the bot lost
-          connection or `False` if the operation timed out.
+        :returns: `True` if the method returned because the bot lost connection
+          or `False` if the operation timed out.
         """
         return self.listen_event.wait(timeout)
 
@@ -477,12 +501,143 @@ class IRCBot(object):
         nargs = get_required_args(function)
         self.events[command].append((function, nargs))
 
+    def safe_message_length(self, target, notice=False):
+        """Gets the maximum number of bytes an IRC PRIVMSG (or optionally a
+        NOTICE) can be without the message possibly being cut off due to the
+        512-byte IRC message limit.
+
+        You will most likely want to use the value returned by this function
+        with :meth:`IRCBot.split_string`.
+
+        However, it is often not necessary to use with method;
+        :meth:`~IRCBot.send` and :meth:`~IRCBot.send_notice` automatically
+        split messages if they're too long.
+
+        :param str target: The channel or nickname the PRIVMSG will be sent to.
+        :param bool notice: If true, the calculation will be performed for an
+          IRC NOTICE, instead of a PRIVMSG.
+        """
+        return self.safe_length(["PRIVMSG", "NOTICE"][notice], target)
+
+    # ==============
+    # Static methods
+    # ==============
+
+    @staticmethod
+    def split_string(string, bytelen, nobreak=True, once=False):
+        """Splits a string into pieces that will take up no more than the
+        specified number of bytes when encoded as UTF-8.
+
+        IRC messages are limited to 512 bytes, so sometimes it is necessary to
+        split longer messages. This method splits strings based on how many
+        bytes, rather than characters, they take up, keeping multi-byte
+        characters intact. For example::
+
+            >>> IRCBot.split_string("This is a test§§§§", 8)
+            ["This is", "a", "test§§", "§§"]
+            >>> IRCBot.split_string("This is a test§§§§", 8, whitespace=False)
+            ["This is ", "a test§", "§§§"]
+            >>> IRCBot.split_string("This is a test§§§§", 8, once=True)
+            ["This is", "a test§§§§"]
+
+        You can use :meth:`~IRCBot.safe_message_length` and
+        :meth:`~IRCBot.safe_notice_length` to determine how large each string
+        piece should be.
+
+        However, it is often not necessary to call this method because
+        :meth:`~IRCBot.send` and :meth:`~IRCBot.send_notice` both split long
+        messages by default.
+
+        :param str string: The string to split.
+        :param int bytelen: The maximum number of bytes string pieces should
+          take up when encoded as UTF-8.
+        :param bool nobreak: If true, strings will be split only where
+          whitespace occurs to avoid breaking words, unless this is not
+          possible. Whitespace between pieces is removed.
+        :param bool once: If true, the string will only be split once. The
+          second piece is not guaranteed to be less than ``bytelen``.
+        :returns: A list of the split string pieces.
+        """
+        result = []
+        rest = string
+        split_func = IRCBot.split_nobreak if nobreak else IRCBot.split_once
+        while not result or (rest and not once):
+            split, rest = split_func(rest, bytelen)
+            result.append(split)
+        return result
+
+    # Splits a string based on the number of bytes it takes
+    # up when encoded as UTF-8.
+    @staticmethod
+    def split_once(string, bytelen):
+        if bytelen <= 0:
+            raise ValueError("Number of bytes must be positive.")
+        bytestr = string.encode("utf8")
+        if len(bytestr) <= bytelen:
+            return (string, "")
+        split, rest = bytestr[:bytelen], bytestr[bytelen:]
+        if ord(split[-1:]) >= 0x80 and 0x80 <= ord(rest[:1]) <= 0xc0:
+            chars = reversed(list(enumerate(split)))
+            start = next(i for i, c in chars if c >= 0xc0)
+            split, rest = split[:start], split[start:] + rest
+        return (split.decode("utf8"), rest.decode("utf8"))
+
+    # Like split_once(), but splits only where whitespace occurs
+    # to avoid breaking words (unless not possible).
+    # Whitespace between split strings is removed.
+    @staticmethod
+    def split_nobreak(string, bytelen):
+        split, rest = IRCBot.split_once(string, bytelen)
+        if not rest:
+            return (split, rest)
+        if not split[-1].isspace() and not rest[0].isspace():
+            space_split = split.rsplit(None, 1)
+            if len(space_split) < 2:
+                return (split, rest)
+            before, after = space_split
+            split, rest = before, after + rest
+            return (split, rest)
+        return (split.rstrip(), rest.lstrip())
+
+    # Parses an IRC message.
+    @staticmethod
+    def parse(message):
+        # Regex to parse IRC messages.
+        match = re.match(
+            r"(?::([^!@ ]+)[^ ]* )?([^ ]+)"
+            r"((?: [^: ][^ ]*){0,14})(?: :?(.+))?",
+            message)
+        nick, cmd, args, trailing = match.groups("")
+        args = args.split()
+        if trailing:
+            args.append(trailing)
+        return (IStr(nick), IStr(cmd), args)
+
+    # Formats an IRC message.
+    @staticmethod
+    def format(command, args=[]):
+        command = ustr(command)
+        args = list(map(ustr, args))
+        if not all(args + [command]):
+            raise ValueError("Command/args may not be empty strings.")
+        if not re.match(r"^[a-zA-Z0-9]+$", command):
+            raise ValueError("Command must be alphanumeric.")
+        if not all(re.match(r"^[^\0\r\n]+$", arg) for arg in args):
+            raise ValueError(r"Arguments may not contain [\0\r\n].")
+        if any(arg[0] == ":" for arg in args[:-1]):
+            raise ValueError("Only the last argument may start with ':'.")
+        if any(" " in arg for arg in args[:-1]):
+            raise ValueError("Only the last argument may contain ' '.")
+        if args:
+            args[-1] = ":" + args[-1]
+        return " ".join([command] + args)
+
     # ===============
     # Private methods
     # ===============
 
     # Method which actually listens for incoming messages.
-    # Wrapped in try-finally clause in the public method listen().
+    # Wrapped in a try-finally clause in the public method listen().
     def _listen(self):
         while True:
             try:
@@ -538,38 +693,14 @@ class IRCBot(object):
                 nicklist.remove(nickname)
                 nicklist.append(IStr(new_nickname))
 
-    # Parses an IRC message.
-    @staticmethod
-    def parse(message):
-        # Regex to parse IRC messages
-        match = re.match(r"(?::([^!@ ]+)[^ ]* )?([^ ]+)"
-                         r"((?: [^: ][^ ]*){0,14})(?: :?(.+))?",
-                         message)
-
-        nick, cmd, args, trailing = match.groups("")
-        args = args.split()
-        if trailing:
-            args.append(trailing)
-        return (IStr(nick), IStr(cmd), args)
-
-    # Formats an IRC message.
-    @staticmethod
-    def format(command, args=[]):
-        command = str(command)
-        args = list(map(str, args))
-        if not all(args + [command]):
-            raise ValueError("Command/args may not be empty strings.")
-        if not re.match(r"^[a-zA-Z0-9]+$", command):
-            raise ValueError("Command must be alphanumeric.")
-        if not all(re.match(r"^[^\0\r\n]+$", arg) for arg in args):
-            raise ValueError(r"Arguments may not contain [\0\r\n].")
-        if any(arg[0] == ":" for arg in args[:-1]):
-            raise ValueError("Only the last argument may start with ':'.")
-        if any(" " in arg for arg in args[:-1]):
-            raise ValueError("Only the last argument may contain ' '.")
-        if args:
-            args[-1] = ":" + args[-1]
-        return " ".join([command] + args)
+    def safe_length(self, *args):
+        # :<nickname>!<user>@<host>
+        # <user> commonly has a 10-character maximum
+        # <host> is 63 characters maximum
+        mask = len(":" + self.nickname + "!") + 10 + len("@") + 63
+        msg = mask + len(" " + " ".join(args) + " :\r\n")
+        # IRC messages are limited to 512 characters.
+        return 512 - msg
 
     # Adds a delayed message, or sends the message if delays are off.
     def add_delayed(self, target, command, args):
