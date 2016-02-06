@@ -51,6 +51,8 @@ Other methods
 .. automethod:: IRCBot.listen_async
 .. automethod:: IRCBot.wait
 .. automethod:: IRCBot.register_event
+.. automethod:: IRCBot.safe_message_length
+.. automethod:: IRCBot.split_string
 
 Events
 ~~~~~~
@@ -156,21 +158,21 @@ The following instance attributes are related to the ``delay`` parameter of
 .. attribute:: IRCBot.delay_multiplier
 
    Multiplied by the number of consecutive messages sent to determine how many
-   seconds to wait before sending the next one. (Default: 0.1).
+   seconds to wait before sending the next one. (Default: 0.1)
 
    :type: `float`
 
 .. attribute:: IRCBot.max_delay
 
    The maximum number of seconds to wait before sending a message. (Default:
-   1.5).
+   1.5)
 
    :type: `float`
 
 .. attribute:: IRCBot.consecutive_timeout
 
    How many seconds must pass before a message is not considered consecutive.
-   (Default: 5).
+   (Default: 5)
 
    :type: `float`
 
