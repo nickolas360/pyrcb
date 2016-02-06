@@ -27,8 +27,16 @@ Changelog
 
 * Added :meth:`IRCBot.register_event`, which allows event handlers to be
   registered for custom IRC commands.
+* Long messages (PRIVMSGs) and notices are now split to ensure that they aren't
+  truncated due to the 512-byte IRC message limit. See
+  :meth:`~IRCBot.on_message` and :meth:`~IRCBot.split_string`.
+* Added :meth:`IRCBot.split_string`.
+* Added :meth:`IRCBot.safe_message_length`.
 * Added configurable attributes for message delaying. See :ref:`delay-options`.
+* Fixed an issue with sending non-ASCII characters in Python 2.
 * Fixed an issue with managing nicklists.
+* Fixed an issue where colons were not allowed in any IRC argument except the
+  last (they should be forbidden only at the start).
 * Improved socket error handling.
 * When using :meth:`~IRCBot.listen_async`, the callback will now be called
   before any calls to :meth:`~IRCBot.wait` return.
