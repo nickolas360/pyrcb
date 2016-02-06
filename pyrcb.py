@@ -502,14 +502,15 @@ class IRCBot(object):
         self.events[command].append((function, nargs))
 
     def safe_message_length(self, target, notice=False):
-        """Gets the maximum number of bytes an IRC PRIVMSG (or optionally a
-        NOTICE) can be without the message possibly being cut off due to the
-        512-byte IRC message limit.
+        """Gets the maximum number of bytes the text of an IRC PRIVMSG (or
+        optionally a NOTICE) can be without the message possibly being cut off
+        due to the 512-byte IRC message limit. This method accounts for extra
+        information added by the IRC server.
 
         You will most likely want to use the value returned by this function
         with :meth:`IRCBot.split_string`.
 
-        However, it is often not necessary to use with method;
+        However, it is often not necessary to use this method;
         :meth:`~IRCBot.send` and :meth:`~IRCBot.send_notice` automatically
         split messages if they're too long.
 
