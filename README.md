@@ -24,7 +24,7 @@ Documentation for pyrcb is available at <https://pyrcb.readthedocs.org/>. If
 you're new to pyrcb, start with [this guide] and take a look at the
 [examples](examples/).
 
-The current version of pyrcb is **1.8.0**, which was released on 2016-01-30.
+The current version of pyrcb is **1.8.0**, which was released on 2016-02-07.
 See the [changelog] for more information.
 
 [this guide]: https://pyrcb.readthedocs.org/guide.html
