@@ -46,7 +46,7 @@ class IRCBot(object):
     Instances of this class are reusable.
 
     :param bool debug_print: Whether or not communication with the IRC server
-      should be printed.
+      should be printed for debugging/logging purposes.
     :param callable print_function: An optional function to be used with
       ``debug_print``. Should accept a single unicode string argument.
       If not provided, communication is printed to stdout.
