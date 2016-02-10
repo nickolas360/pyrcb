@@ -546,6 +546,8 @@ class TestMisc(BaseTest):
         self.assertEqual(split, ["test§", "test"])
         split = IRCBot.split_string("test§test", 5)
         self.assertEqual(split, ["test", "§tes", "t"])
+        split = IRCBot.split_string("test§§  test", 10)
+        self.assertEqual(split, ["test§§ ", "test"])
         with self.assertRaises(ValueError):
             IRCBot.split_string("test", 0)
 
