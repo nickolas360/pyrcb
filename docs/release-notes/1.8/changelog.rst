@@ -20,6 +20,17 @@
 Changelog
 =========
 
+.. _changelog-1.8.1:
+
+1.8.1
+-----
+
+* Fixed the behavior of string splitting (used in :meth:`~IRCBot.on_message`,
+  :meth:`~IRCBot.on_notice`, and :meth:`~IRCBot.split_string`) when ``nobreak``
+  is true: if present, one space character between split strings is removed.
+  (Previously, as many spaces as possible were removed, which could result in
+  empty messages).
+
 .. _changelog-1.8.0:
 
 1.8.0
