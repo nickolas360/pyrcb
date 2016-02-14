@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
 #
 # This program is free software: you can redistribute it and/or modify
