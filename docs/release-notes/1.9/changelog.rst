@@ -1,4 +1,4 @@
-.. Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
+.. Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
 
 .. This file is part of pyrcb-docs, documentation for pyrcb.
 
@@ -17,13 +17,15 @@
 
 .. currentmodule:: pyrcb
 
-Release notes
-=============
+Changelog
+=========
 
-.. toctree::
-   :maxdepth: 2
+.. _changelog-1.9.0:
 
-   1.9/index
-   1.8/index
-   1.7/index
-   1.6/index
+1.9.0
+-----
+
+* In events, nicknames which represent the user a command originated from are
+  now of type `Nickname` (a subclass of `IStr`), which means that they have two
+  additional attributes: ``username`` and ``hostname``. See `Nickname` and
+  individual events' descriptions for more information.
