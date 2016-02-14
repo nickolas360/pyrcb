@@ -63,3 +63,8 @@ parameter (usually the nickname of the user the command originated from) is of
 type `IStr` (i.e. case-insensitive). All other parameters that represent
 nicknames or channels should be converted to IStr. See
 :meth:`IRCBot.register_event` for more information.
+
+Numeric replies are handled in the same way as regular commands, although it
+may be more appropriate to name the first parameter ``server`` instead of
+``nickname``. Also remember that the first argument of numeric replies (besides
+``server``) is the target of the reply (your bot).
