@@ -19,7 +19,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from mocks import mock_event, MockSocket, MockSSLContext
 from mocks import MockClock, MockEvent, MockDelaySocket
-from pyrcb import IRCBot, IDefaultDict, IStr, ustr
+from pyrcb import IRCBot, IDefaultDict, IStr, Nickname, ustr
 from unittest import TestCase
 from collections import Counter
 import pyrcb
@@ -523,6 +523,19 @@ class TestDelay(BaseTest):
 
 
 class TestMisc(BaseTest):
+    def test_parse(self):
+        nick, cmd, args = IRCBot.parse(
+            ":nickname!user@host.name COMMAND arg1 arg2 :trailing arg")
+        self.assertIs(type(nick), Nickname)
+        self.assertIs(type(cmd), IStr)
+        for arg in args:
+            self.assertIs(type(arg), ustr)
+        self.assertEqual(nick, "nickname")
+        self.assertEqual(nick.username, "user")
+        self.assertEqual(nick.hostname, "host.name")
+        self.assertEqual(cmd, "COMMAND")
+        self.assertEqual(args, ["arg1", "arg2", "trailing arg"])
+
     def test_format(self):
         self.assertEqual(IRCBot.format("CMD"), "CMD")
         self.assertEqual(IRCBot.format("CMD", ["a:", "b c"]), "CMD a: :b c")
@@ -619,6 +632,14 @@ class TestMisc(BaseTest):
         d = IDefaultDict()
         with self.assertRaises(KeyError):
             d["test"]
+
+    def test_nickname(self):
+        nick = Nickname("Test", username="user", hostname="host")
+        self.assertEqual(nick, "TEST")
+        self.assertEqual(nick.username, "user")
+        self.assertEqual(nick.hostname, "host")
+        with self.assertRaises(TypeError):
+            Nickname("Test")
 
 if __name__ == "__main__":
     unittest.main()
