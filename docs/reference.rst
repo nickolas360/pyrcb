@@ -68,6 +68,11 @@ Events
    with those parameters are case-insensitive, so you don't have to call
    :meth:`~str.lower` on them first.
 
+   Nicknames which represent the user a command originated from are of type
+   `Nickname`, a subclass of `IStr`. This means they have two additional
+   attributes: ``username`` and ``hostname``. See individual methods'
+   descriptions for more information.
+
    Case-insensitive strings abide by `IRC case rules`_, which state that
    ``{}|^`` are lowercase equivalents of ``[]\~``. See `IStr` for more info.
 
@@ -186,3 +191,10 @@ IDefaultDict
 
 .. autoclass:: IDefaultDict
    :show-inheritance:
+
+Nickname
+--------
+
+.. autoclass:: Nickname(\*args, username, hostname, \*\*kwargs)
+   :show-inheritance:
+
