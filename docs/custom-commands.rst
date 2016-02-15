@@ -23,7 +23,6 @@ Custom commands
 This document will cover how to send and handle IRC commands that don't have
 dedicated methods or event handlers.
 
-
 Sending
 -------
 
@@ -39,7 +38,6 @@ for example::
         def invite(self, nickname, channel):
             self.send_raw("INVITE", [nickname, channel])
 
-
 Handling
 --------
 
@@ -53,16 +51,16 @@ messages, for example, you would write something like this::
             self.register_event(self.on_invite, "INVITE")
 
         def on_invite(self, nickname, target, channel):
-            # In custom event handlers, only the nickname parameter is of
-            # type IStr. Other parameters must be converted manually.
+            # In custom event handlers, only the first parameter is
+            # case-insensitive. Other parameters must be manually converted.
             channel, target = IStr(channel), IStr(target)
             print(nickname, "has invited", target, "to", channel)
 
 As stated in the example above, in custom event handlers, only the first
-parameter (usually the nickname of the user the command originated from) is of
-type `IStr` (i.e. case-insensitive). All other parameters that represent
-nicknames or channels should be converted to IStr. See
-:meth:`IRCBot.register_event` for more information.
+parameter (usually the nickname of the user the command originated from) is
+case-insensitive. All other parameters that represent nicknames or channels
+must be manually converted to `IStr`. See :meth:`IRCBot.register_event` for
+more information.
 
 Numeric replies are handled in the same way as regular commands, although it
 may be more appropriate to name the first parameter ``server`` instead of
