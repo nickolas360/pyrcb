@@ -1,4 +1,4 @@
-.. Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
+.. Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
 
 .. This file is part of pyrcb-docs, documentation for pyrcb.
 
@@ -17,14 +17,15 @@
 
 .. currentmodule:: pyrcb
 
-Release notes
-=============
+Changelog
+=========
 
-.. toctree::
-   :maxdepth: 2
+.. _changelog-1.10.0:
 
-   1.10/index
-   1.9/index
-   1.8/index
-   1.7/index
-   1.6/index
+1.10.0
+------
+
+* Nicknames in `IRCBot.nicklist` and in the ``names`` parameter of
+  :meth:`IRCBot.on_names` now have two additional attributes: ``is_voiced`` and
+  ``is_op``, which specify whether or not each user is voiced or is a channel
+  operator.
