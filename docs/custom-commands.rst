@@ -52,11 +52,11 @@ messages, for example, you would write something like this::
             super().__init__(*args, **kwargs)
             self.register_event(self.on_invite, "INVITE")
 
-        def on_invite(self, nickname, channel):
+        def on_invite(self, nickname, target, channel):
             # In custom event handlers, only the nickname parameter is of
             # type IStr. Other parameters must be converted manually.
-            channel = IStr(channel)
-            print(nickname, "has invited this bot to", channel)
+            channel, target = IStr(channel), IStr(target)
+            print(nickname, "has invited", target, "to", channel)
 
 As stated in the example above, in custom event handlers, only the first
 parameter (usually the nickname of the user the command originated from) is of
