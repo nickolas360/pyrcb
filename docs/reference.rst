@@ -150,6 +150,10 @@ except for ones under :ref:`delay-options`.
    channel, a dictionary lookup will return an empty list instead of producing
    an error.
 
+   Nicknames are of type `IStr`, but have two additional boolean attributes:
+   ``is_voiced`` and ``is_op``, which specify whether or not each user is
+   voiced or is a channel operator.
+
    :type: `IDefaultDict`; maps `str` to `list` of `IStr`
 
 .. _delay-options:
