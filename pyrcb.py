@@ -28,7 +28,7 @@ import sys
 import threading
 import time
 
-__version__ = "1.9.0"
+__version__ = "1.10.0"
 
 # ustr is unicode in Python 2 (because of unicode_literals)
 # and str in Python 3.
