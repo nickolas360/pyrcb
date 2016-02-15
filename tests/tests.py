@@ -320,6 +320,10 @@ class TestEvents(BaseTest):
         def on_names(channel, names):
             self.assertCountEqualIStr(self.bot.nicklist[channel], names)
             self.assertCountEqualIStr(names, ["a", "b", "self"])
+            for n1, n2, n3 in [names, self.bot.nicklist[channel]]:
+                self.assertEqual((n1.is_op, n1.is_voiced), (True, False))
+                self.assertEqual((n2.is_op, n2.is_voiced), (False, True))
+                self.assertEqual((n3.is_op, n3.is_voiced), (False, False))
         self.handle_line(":server 353 self = #test1 :@a +b self")
         self.handle_line(":server 366 self #test1 :End of names")
         self.assertEqual(on_names.call_count, 1)
