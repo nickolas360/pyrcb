@@ -789,11 +789,11 @@ class IRCBot(object):
     def close_socket(self):
         try:
             self.socket.shutdown(socket.SHUT_RDWR)
-            self.socket.close()
         except socket.error as e:
             if not catch_socket_error(e):
                 raise
         finally:
+            self.socket.close()
             self.alive = False
             self.delay_event.set()
 
