@@ -599,8 +599,8 @@ class TestMisc(BaseTest):
 
     def test_close_socket_error_uncaught(self):
         self.bot = IRCBot()
-        error = socket.error(errno.EPERM)
-        self.bot.socket.close = mock.Mock(side_effect=error)
+        error = socket.error(errno.EPERM, "Test message")
+        self.bot.socket.shutdown = mock.Mock(side_effect=error)
         with self.assertRaises(socket.error):
             self.bot.close_socket()
 
