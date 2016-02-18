@@ -20,6 +20,13 @@
 Changelog
 =========
 
+.. _changelog-1.10.1:
+
+1.10.1
+------
+
+* Fixed a bug where sockets would sometimes not be properly cleaned up.
+
 .. _changelog-1.10.0:
 
 1.10.0
