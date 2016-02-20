@@ -1,7 +1,7 @@
 pyrcb
 =====
 
-Version 1.10.1
+Version 1.10.2
 
 **pyrcb** is a simple, self-contained, extendable library for building IRC
 bots. It isn't a full implementation of IRC, but rather provides everything
@@ -24,7 +24,7 @@ Documentation for pyrcb is available at <https://pyrcb.readthedocs.org/>. If
 you're new to pyrcb, start with [this guide] and take a look at the
 [examples](examples/).
 
-The current version of pyrcb is **1.10.1**, which was released on 2016-02-18.
+The current version of pyrcb is **1.10.2**, which was released on 2016-02-19.
 See the [changelog] for more information.
 
 [this guide]: https://pyrcb.readthedocs.org/guide.html
