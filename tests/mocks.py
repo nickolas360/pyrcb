@@ -44,6 +44,17 @@ def mock_event(bot=None, event_name=None):
     return decorator
 
 
+# Returns a mock of socket.create_connection().
+def mock_create_connection(instance=None):
+    if instance is None:
+        instance = MockSocket()
+
+    def result(address, *args):
+        instance.connect(address)
+        return instance
+    return result
+
+
 class BaseMock(mock.NonCallableMock):
     # Override in subclasses.
     spec = None

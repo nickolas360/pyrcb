@@ -17,8 +17,8 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
-from mocks import mock_event, MockSocket, MockSSLContext
-from mocks import MockClock, MockEvent, MockDelaySocket
+from mocks import mock_event, mock_create_connection, MockSocket
+from mocks import MockSSLContext, MockClock, MockEvent, MockDelaySocket
 from pyrcb import IRCBot, IDefaultDict, IStr, Nickname, ustr
 from unittest import TestCase
 from collections import Counter
@@ -39,35 +39,10 @@ except ImportError:
 
 
 class BaseTest(TestCase):
-    def setUp(self):
-        # Patched classes will return the same instance every
-        # time so the instances can be inspected.
-        self.patch("socket.socket", new=MockSocket.get_mock_class())
-        self.patch("ssl.SSLContext", new=MockSSLContext.get_mock_class())
-        self.patch("ssl.match_hostname", spec=ssl.match_hostname)
-
     def patch(self, *args, **kwargs):
         patch_obj = mock.patch(*args, **kwargs)
         patch_obj.start()
         self.addCleanup(patch_obj.stop)
-
-    # Loads data into the bot's socket to be returned later by recv().
-    def from_server(self, *lines):
-        self.bot.socket.from_server(
-            "".join(line + "\r\n" for line in lines).encode("utf8"))
-
-    # Clears data sent by the bot.
-    def clear_sent(self):
-        self.bot.socket.clear_data()
-
-    # Causes the bot to handle the specified line, calling all events.
-    def handle_line(self, line):
-        self.bot._handle(line)
-
-    def register_bot(self, nickname):
-        self.from_server(":server 001 {0} :Welcome".format(nickname))
-        self.bot.register(nickname)
-        self.clear_sent()
 
     # Not all versions of mock have assertCountEqual().
     def assertCountEqual(self, first, second):
@@ -95,6 +70,35 @@ class BaseTest(TestCase):
         self.assertCalledOnce(event, *args, **kwargs)
         self.assertTrue(getattr(event, "event_called", False))
 
+
+class BaseBotTest(BaseTest):
+    def setUp(self):
+        # Patched classes will return the same instance every
+        # time so the instances can be inspected.
+        self.mock_socket = MockSocket()
+        self.patch("ssl.SSLContext", new=MockSSLContext.get_mock_class())
+        self.patch("ssl.match_hostname", spec=ssl.match_hostname)
+        self.patch("socket.create_connection", spec=socket.create_connection,
+                   side_effect=mock_create_connection(self.mock_socket))
+
+    # Loads data into the bot's socket to be returned later by recv().
+    def from_server(self, *lines):
+        self.bot.socket.from_server(
+            "".join(line + "\r\n" for line in lines).encode("utf8"))
+
+    # Clears data sent by the bot.
+    def clear_sent(self):
+        self.bot.socket.clear_data()
+
+    # Causes the bot to handle the specified line, calling all events.
+    def handle_line(self, line):
+        self.bot._handle(line)
+
+    def register_bot(self, nickname):
+        self.from_server(":server 001 {0} :Welcome".format(nickname))
+        self.bot.register(nickname)
+        self.clear_sent()
+
     # Asserts that the bot sent the specified lines of text.
     def assertSent(self, *lines):
         data = "".join(line + "\r\n" for line in lines).encode("utf8")
@@ -119,7 +123,7 @@ class BaseTest(TestCase):
         self.assertNotIn(nickname, self.bot.nicklist[channel])
 
 
-class TestCommands(BaseTest):
+class TestCommands(BaseBotTest):
     def setUp(self):
         super(TestCommands, self).setUp()
         self.bot = IRCBot(delay=False)
@@ -195,7 +199,7 @@ class TestCommands(BaseTest):
         self.assertSent("TESTCOMMAND arg1 arg2 :arg with spaces")
 
 
-class TestEvents(BaseTest):
+class TestEvents(BaseBotTest):
     def setUp(self):
         super(TestEvents, self).setUp()
         self.bot = IRCBot(delay=False)
@@ -367,7 +371,7 @@ class TestEvents(BaseTest):
                     self.test_register_event()
 
 
-class TestConnect(BaseTest):
+class TestConnect(BaseBotTest):
     def setUp(self):
         super(TestConnect, self).setUp()
         self.bot = IRCBot(delay=False)
@@ -384,7 +388,8 @@ class TestConnect(BaseTest):
         peercert = self.bot.socket.getpeercert()
         load_default_certs = getattr(
             context, "load_default_certs", context.set_default_verify_paths)
-        self.assertCalledOnce(context.wrap_socket, socket.socket())
+
+        self.assertCalledOnce(context.wrap_socket, self.mock_socket)
         self.assertCalledOnce(load_default_certs)
         self.assertCalledOnce(ssl.match_hostname, peercert, "example.com")
 
@@ -394,6 +399,7 @@ class TestConnect(BaseTest):
         self.assertCalledOnce(context.load_verify_locations, cafile="/test")
 
     def test_register(self):
+        self.bot.connect("example.com", 6697)
         self.from_server(":server 001 test-nickname :Welcome")
         self.bot.register("test-nickname")
         self.assertSent(
@@ -401,6 +407,7 @@ class TestConnect(BaseTest):
             "NICK :test-nickname")
 
     def test_register_realname(self):
+        self.bot.connect("example.com", 6697)
         self.from_server(":server 001 test-nickname :Welcome")
         self.bot.register("test-nickname", "test-realname")
         self.assertSent(
@@ -408,11 +415,13 @@ class TestConnect(BaseTest):
             "NICK :test-nickname")
 
     def test_register_nickname_in_use(self):
+        self.bot.connect("example.com", 6697)
         self.from_server(":server 433 * test-nickname :Nickname in use")
         with self.assertRaises(ValueError):
             self.bot.register("test-nickname")
 
     def test_register_connection_lost(self):
+        self.bot.connect("example.com", 6697)
         self.from_server()
         with self.assertRaises(IOError):
             self.bot.register("test-nickname")
@@ -427,7 +436,7 @@ class TestConnect(BaseTest):
         self.assertFalse(self.bot.is_registered)
 
 
-class TestListen(BaseTest):
+class TestListen(BaseBotTest):
     def setUp(self):
         super(TestListen, self).setUp()
         self.bot = IRCBot(delay=False)
@@ -478,14 +487,16 @@ class TestListen(BaseTest):
             self.bot.listen()
 
 
-class TestDelay(BaseTest):
+class TestDelay(BaseBotTest):
     def setUp(self):
         super(TestDelay, self).setUp()
         mock_clock = MockClock()
-        self.patch("pyrcb.best_clock", new=mock_clock),
+        mock_socket = MockDelaySocket(mock_clock)
+        self.patch("pyrcb.best_clock", new=mock_clock)
+        self.patch("socket.create_connection", spec=socket.create_connection,
+                   new=mock_create_connection(mock_socket))
 
         self.bot = IRCBot(delay=False)
-        self.bot.socket = MockDelaySocket(mock_clock)
         self.bot.delay_event = MockEvent(mock_clock, self.bot)
 
     def test_delay(self):
@@ -526,7 +537,30 @@ class TestDelay(BaseTest):
         self.assertCalled(threading.Thread, target=self.bot.delay_loop)
 
 
-class TestMisc(BaseTest):
+class TestCloseSocket(BaseBotTest):
+    def setUp(self):
+        super(TestCloseSocket, self).setUp()
+        self.bot = IRCBot()
+        self.bot.connect("example.com", 6667)
+
+    def test_close_socket(self):
+        self.bot.close_socket()
+        self.assertCalled(self.bot.socket.shutdown, socket.SHUT_RDWR)
+        self.assertCalled(self.bot.socket.close)
+
+    def test_close_socket_error_caught(self):
+        error = socket.error(errno.ENOTCONN, "Test message")
+        self.bot.socket.shutdown = mock.Mock(side_effect=error)
+        self.bot.close_socket()
+
+    def test_close_socket_error_uncaught(self):
+        error = socket.error(errno.EPERM, "Test message")
+        self.bot.socket.shutdown = mock.Mock(side_effect=error)
+        with self.assertRaises(socket.error):
+            self.bot.close_socket()
+
+
+class TestMisc(BaseBotTest):
     def test_parse(self):
         nick, cmd, args = IRCBot.parse(
             ":nickname!user@host.name COMMAND arg1 arg2 :trailing arg")
@@ -578,6 +612,7 @@ class TestMisc(BaseTest):
 
     def test_debug_print(self):
         self.bot = IRCBot(debug_print=True)
+        self.bot.connect("example.com", 6697)
         self.from_server(":test CMD :arg")
         with mock.patch("pyrcb.print", create=True):
             self.bot.readline()
@@ -585,25 +620,8 @@ class TestMisc(BaseTest):
             self.bot.writeline("CMD :arg")
             self.assertCalled(pyrcb.print, ">>> CMD :arg", file=sys.stdout)
 
-    def test_close_socket(self):
-        self.bot = IRCBot()
-        self.bot.close_socket()
-        self.assertCalled(self.bot.socket.shutdown, socket.SHUT_RDWR)
-        self.assertCalled(self.bot.socket.close)
 
-    def test_close_socket_error_caught(self):
-        self.bot = IRCBot()
-        error = socket.error(errno.ENOTCONN, "Test message")
-        self.bot.socket.shutdown = mock.Mock(side_effect=error)
-        self.bot.close_socket()
-
-    def test_close_socket_error_uncaught(self):
-        self.bot = IRCBot()
-        error = socket.error(errno.EPERM, "Test message")
-        self.bot.socket.shutdown = mock.Mock(side_effect=error)
-        with self.assertRaises(socket.error):
-            self.bot.close_socket()
-
+class TestCaseInsensitiveClasses(BaseTest):
     def test_istr(self):
         self.assertEqual(IStr("TEST~"), "Test^")
         self.assertEqual("TEST~", IStr("Test^"))
