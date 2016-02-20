@@ -77,7 +77,7 @@ class IRCBot(object):
     # Initializes attributes.
     def _init_attributes(self):
         self._buffer = ""
-        self.socket = socket.socket()
+        self.socket = None
         self.hostname = None
         self.port = None
 
@@ -417,7 +417,7 @@ class IRCBot(object):
 
         self.hostname = hostname
         self.port = port
-        self.socket.connect((hostname, port))
+        self.socket = socket.create_connection((hostname, port))
 
         if use_ssl:
             self.socket = wrap_socket(
