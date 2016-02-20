@@ -20,6 +20,13 @@
 Changelog
 =========
 
+.. _changelog-1.10.2:
+
+1.10.2
+------
+
+* Sockets now work with IPv6 address.
+
 .. _changelog-1.10.1:
 
 1.10.1
