@@ -406,12 +406,20 @@ class TestConnect(BaseBotTest):
             "USER test-nickname 8 * :test-nickname",
             "NICK :test-nickname")
 
-    def test_register_realname(self):
+    def test_register_with_realname(self):
         self.bot.connect("example.com", 6697)
         self.from_server(":server 001 test-nickname :Welcome")
         self.bot.register("test-nickname", "test-realname")
         self.assertSent(
             "USER test-nickname 8 * :test-realname",
+            "NICK :test-nickname")
+
+    def test_register_with_username(self):
+        self.bot.connect("example.com", 6697)
+        self.from_server(":server 001 test-nickname :Welcome")
+        self.bot.register("test-nickname", "test-realname", "test-username")
+        self.assertSent(
+            "USER test-username 8 * :test-realname",
             "NICK :test-nickname")
 
     def test_register_nickname_in_use(self):
