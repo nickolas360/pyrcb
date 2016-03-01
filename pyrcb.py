@@ -134,7 +134,7 @@ class IRCBot(object):
         """Registers with the server. (``USER`` and ``NICK`` commands.)
 
         If ``nickname`` contains non-alphanumeric characters, it may be
-        necessary to provide a separate username (see the ``username
+        necessary to provide a separate username (see the ``username``
         parameter).
 
         :param str nickname: The nickname to use. A `ValueError` is raised if
@@ -142,7 +142,7 @@ class IRCBot(object):
         :param str realname: The real name to use. If not specified,
           ``nickname`` will be used.
         :param str username: The username to use. If not specified,
-          ``nickname``.
+          ``nickname`` will be used.
         """
         realname = realname or nickname
         username = username or nickname
