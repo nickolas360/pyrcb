@@ -23,6 +23,7 @@ Release notes
 .. toctree::
    :maxdepth: 2
 
+   1.11/index
    1.10/index
    1.9/index
    1.8/index
