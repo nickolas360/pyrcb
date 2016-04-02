@@ -37,5 +37,5 @@ Changelog
   thread. This should be used instead of :meth:`~IRCBot.listen_async`.
 * Deprecated :meth:`IRCBot.listen_async`. Instead of running the bot in the
   background, start threads with :meth:`~IRCBot.start_thread` and call
-  `~IRCBot.listen` on the main thread.
+  :meth:`~IRCBot.listen` on the main thread.
 * Fixed possible errors when closing sockets.
