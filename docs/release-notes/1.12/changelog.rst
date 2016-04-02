@@ -1,4 +1,4 @@
-.. Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
+.. Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
 
 .. This file is part of pyrcb-docs, documentation for pyrcb.
 
@@ -17,16 +17,17 @@
 
 .. currentmodule:: pyrcb
 
-Release notes
-=============
+Changelog
+=========
 
-.. toctree::
-   :maxdepth: 2
+.. _changelog-1.12.0:
 
-   1.12/index
-   1.11/index
-   1.10/index
-   1.9/index
-   1.8/index
-   1.7/index
-   1.6/index
+1.12.0
+------
+
+* Added :meth:`IRCBot.start_thread`, which starts a function on a separate
+  thread. This should be used instead of :meth:`~IRCBot.listen_async`.
+* Deprecated :meth:`IRCBot.listen_async`. Instead of running the bot in the
+  background, start threads with :meth:`~IRCBot.start_thread` and call
+  `~IRCBot.listen` on the main thread.
+* Fixed possible errors when closing sockets.
