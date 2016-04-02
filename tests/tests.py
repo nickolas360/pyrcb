@@ -17,9 +17,8 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
-from mocks import mock_event, get_mock_create_connection, get_mock_thread
-from mocks import MockSocket, MockSSLContext, MockClock, MockEvent
-from mocks import MockDelaySocket
+from mocks import mock_event, get_mock_create_connection, MockSocket
+from mocks import MockSSLContext, MockClock, MockEvent, MockDelaySocket
 from pyrcb import IRCBot, IDefaultDict, IStr, Nickname, ustr
 from unittest import TestCase
 from collections import Counter
@@ -31,6 +30,7 @@ import socket
 import ssl
 import sys
 import threading
+import traceback
 import warnings
 
 try:
@@ -486,6 +486,24 @@ class TestListen(BaseBotTest):
         self.assertAnyCall(on_raw, "self", "COMMAND2", [])
         self.assertCalled(callback)
 
+    def test_listen_async_exception(self):
+        @mock_event(self.bot, "on_raw")
+        def on_raw(nickname, command, args):
+            raise Exception("Test exception")
+        self.from_server(":self COMMAND1")
+        self.from_server()
+
+        mock_format_exc = mock.Mock(spec=[])
+        print_patch = mock.patch.object(pyrcb, "print")
+        format_exc_patch = mock.patch.object(
+            traceback, "format_exc", mock_format_exc)
+
+        with print_patch, format_exc_patch:
+            with warnings.catch_warnings(record=True):
+                self.bot.listen_async()
+            self.bot.wait()
+        self.assertCalled(mock_format_exc)
+
     def test_socket_error_caught(self):
         error = socket.error(errno.ECONNRESET, "Test exception")
         self.bot.readline = mock.Mock(side_effect=error)
@@ -647,21 +665,14 @@ class TestMisc(BaseBotTest):
         self.bot.connect("example.com", 6667)
         target = mock.Mock(spec=[], side_effect=Exception("Test"))
 
-        def wrapper(func):
-            def result(*args, **kwargs):
-                with self.assertRaises(Exception):
-                    func(*args, **kwargs)
-            return result
+        mock_format_exc = mock.Mock(wraps=traceback.format_exc)
+        with mock.patch.object(traceback, "format_exc", mock_format_exc):
+            with mock.patch.object(pyrcb, "print"):
+                thread = self.bot.start_thread(target, ["test"])
+                thread.join()
 
-        mock_thread = mock.Mock(wraps=get_mock_thread(wrapper))
-        with mock.patch.object(threading, "Thread", mock_thread):
-            thread = self.bot.start_thread(target, ["test"], {"test": "test"})
-        thread.join()
-
-        self.assertCalled(
-            mock_thread, target=mock.ANY, args=["test"],
-            kwargs={"test": "test"})
-        self.assertCalled(target, "test", test="test")
+        self.assertCalled(mock_format_exc)
+        self.assertCalled(target, "test")
         self.assertFalse(self.bot.alive)
 
     def test_start_thread_reconnect(self):
