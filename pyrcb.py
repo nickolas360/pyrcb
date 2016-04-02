@@ -71,6 +71,8 @@ class IRCBot(object):
         self.consecutive_timeout = 5
 
         self.close_socket_lock = threading.RLock()
+        self.bg_thread_lock = threading.RLock()
+
         self._first_use = True
         self._init_attributes()
         self._register_events()
@@ -100,6 +102,9 @@ class IRCBot(object):
         self.last_sent = IDefaultDict(lambda: (0, 0))
         self.delay_event = threading.Event()
         self.listen_event = threading.Event()
+
+        with self.bg_thread_lock:
+            self.bg_threads = set()
 
     # Registers event handlers.
     def _register_events(self):
@@ -437,6 +442,41 @@ class IRCBot(object):
             t = threading.Thread(target=self.delay_loop)
             t.daemon = True
             t.start()
+
+    def start_thread(self, target, args=(), kwargs={}, daemon=False,
+                     kill_bot=True):
+        """Runs a function on a separate thread.
+
+        :param callable target: The function to run.
+        :param iterable args: Positional arguments to be passed to ``target``.
+        :param dict kwargs: Keyword arguments to be passed to ``target``.
+        :param bool daemon: If true, the thread started by this method will be
+          a daemon thread. See `threading.Thread`.
+        :param bool kill_bot: If true, the bot will be killed if ``target``
+          raises an exception.
+        :returns: The new thread.
+        """
+        def wrapper(*args, **kwargs):
+            exception = False
+            try:
+                target(*args, **kwargs)
+            except Exception:
+                exception = True
+                raise
+            finally:
+                with self.bg_thread_lock:
+                    if thread not in self.bg_threads:
+                        return
+                    if exception:
+                        self.close_socket()
+                    self.bg_threads -= {thread}
+
+        thread = threading.Thread(target=wrapper, args=args, kwargs=kwargs)
+        thread.daemon = daemon
+        with self.bg_thread_lock:
+            self.bg_threads.add(thread)
+        thread.start()
+        return thread
 
     def listen(self):
         """Listens for incoming messages and calls the appropriate events.
