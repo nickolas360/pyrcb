@@ -47,6 +47,7 @@ Other methods
 ~~~~~~~~~~~~~
 
 .. automethod:: IRCBot.connect
+.. automethod:: IRCBot.start_thread
 .. automethod:: IRCBot.listen
 .. automethod:: IRCBot.listen_async
 .. automethod:: IRCBot.wait
