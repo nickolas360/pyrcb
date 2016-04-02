@@ -27,6 +27,7 @@ import ssl
 import sys
 import threading
 import time
+import warnings
 
 __version__ = "1.11.0"
 
@@ -481,8 +482,8 @@ class IRCBot(object):
     def listen(self):
         """Listens for incoming messages and calls the appropriate events.
 
-        This method is blocking. Either this method or :meth:`listen_async`
-        should be called after registering and joining channels.
+        This method is blocking and should be called after registering and
+        joining channels.
         """
         try:
             self._listen()
@@ -491,15 +492,25 @@ class IRCBot(object):
             self.listen_event.set()
 
     def listen_async(self, callback=None):
-        """Listens for incoming messages on a separate thread and calls the
+        """.. deprecated:: 1.12.0
+           Instead of running the bot in the background, start threads with
+           :meth:`IRCBot.start_thread` and call :meth:`IRCBot.listen` on the
+           main thread.
+
+        Listens for incoming messages on a separate thread and calls the
         appropriate events.
 
-        This method is non-blocking. Either this method of :meth:`listen`
-        should be called after registering and joining channels.
+        This method is deprecated. See the notice above.
 
         :param callable callback: An optional function to call when connection
           to the server is lost.
         """
+        warnings.warn(
+            "IRCBot.listen_async() is deprecated. Instead of running this bot "
+            "in the background, start threads with IRCBot.start_thread() and "
+            "call IRCBot.listen() on the main thread.",
+            DeprecationWarning)
+
         def target():
             try:
                 self._listen()
@@ -517,12 +528,11 @@ class IRCBot(object):
         """Blocks until connection to the server is lost, or until the
         operation times out if a timeout is given.
 
-        This can be useful with :meth:`listen_async` to keep the program alive
-        if there is nothing more to do on the main thread.
+        This can be useful in methods started by :meth:`IRCBot.start_thread`.
 
         Using this function with a ``timeout`` parameter is a better
         alternative to :func:`time.sleep`, since it will return as soon as the
-        bot loses connection, so the program can respond appropriately or end.
+        bot loses connection, so threads can respond appropriately or end.
 
         :param float timeout: A timeout for the operation in seconds.
         :returns: `True` if the method returned because the bot lost connection
