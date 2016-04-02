@@ -24,10 +24,12 @@ class AutoTimeBot(IRCBot):
             else:
                 self.send(channel, nickname + ": " + time)
 
-    # Say the time every ten minutes.
-    def auto_time_loop(self, channel):
+    # Says the time at a specified rate.
+    def auto_time_loop(self, interval):
         while self.alive:
-            self.wait(10 * 60)
+            # If the bot loses connection while waiting, return.
+            if self.wait(interval):
+                return
             time = str(datetime.utcnow())
             for channel in self.channels:
                 self.send(channel, "(auto) " + time)
@@ -39,11 +41,9 @@ def main():
     bot.register("timebot")
     bot.join("#timebot")
 
-    # Non-blocking.
-    bot.listen_async()
-
-    # Blocking; will return when disconnected.
-    bot.auto_time_loop("#timebot")
+    interval = 10 * 60  # 10 minutes
+    bot.start_thread(bot.auto_time_loop, args=[interval])
+    bot.listen()
     print("Disconnected from server.")
 
 if __name__ == "__main__":
