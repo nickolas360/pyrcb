@@ -20,6 +20,14 @@
 Changelog
 =========
 
+.. _changelog-1.12.1:
+
+1.12.1
+------
+
+* Fixed an issue where exceptions in background threads would sometimes not be
+  printed.
+
 .. _changelog-1.12.0:
 
 1.12.0
