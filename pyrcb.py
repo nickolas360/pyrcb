@@ -70,6 +70,7 @@ class IRCBot(object):
         # consecutive.
         self.consecutive_timeout = 5
 
+        self.close_socket_lock = threading.RLock()
         self._first_use = True
         self._init_attributes()
         self._register_events()
@@ -795,6 +796,13 @@ class IRCBot(object):
 
     # Closes the socket.
     def close_socket(self):
+        with self.close_socket_lock:
+            if self.alive:
+                self._close_socket()
+
+    # Actually closes the socket; called by close_socket()
+    # once it acquires the lock.
+    def _close_socket(self):
         try:
             self.socket.shutdown(socket.SHUT_RDWR)
         except socket.error as e:
