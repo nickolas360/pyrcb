@@ -29,7 +29,7 @@ import threading
 import time
 import warnings
 
-__version__ = "1.11.0"
+__version__ = "1.12.0"
 
 # ustr is unicode in Python 2 (because of unicode_literals)
 # and str in Python 3.
