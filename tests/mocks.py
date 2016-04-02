@@ -45,13 +45,22 @@ def mock_event(bot=None, event_name=None):
 
 
 # Returns a mock of socket.create_connection().
-def mock_create_connection(instance=None):
+def get_mock_create_connection(instance=None):
     if instance is None:
         instance = MockSocket()
 
     def result(address, *args):
         instance.connect(address)
         return instance
+    return result
+
+
+# Returns a mock of threading.Thread().
+def get_mock_thread(wrapper):
+    Thread = threading.Thread
+
+    def result(group=None, target=None, *args, **kwargs):
+        return Thread(group, wrapper(target), *args, **kwargs)
     return result
 
 
