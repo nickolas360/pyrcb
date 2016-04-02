@@ -731,6 +731,8 @@ class IRCBot(object):
                 nicklist.remove(nickname)
                 nicklist.append(IStr(new_nickname))
 
+    # Gets the maximum number of bytes the trailing argument of
+    # an IRC message can be without possibly being cut off.
     def safe_length(self, *args):
         # :<nickname>!<user>@<host>
         # <user> commonly has a 10-character maximum
