@@ -1,4 +1,4 @@
-.. Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
+.. Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
 
 .. This file is part of pyrcb-docs, documentation for pyrcb.
 
@@ -17,17 +17,20 @@
 
 .. currentmodule:: pyrcb
 
-Release notes
-=============
+Changelog
+=========
 
-.. toctree::
-   :maxdepth: 2
+.. _changelog-1.13.0:
 
-   1.13/index
-   1.12/index
-   1.11/index
-   1.10/index
-   1.9/index
-   1.8/index
-   1.7/index
-   1.6/index
+1.13.0
+------
+
+* Users' voice and channel operator statuses are now properly tracked.
+* `IRCBot.nicklist` now maps channel names to `IDefaultDict` instances, where
+  each of those dictionaries maps nicknames to `VoiceOpInfo` objects.
+* Added `VoiceOpInfo`, a subclass of `IStr` that stores a user's voice and
+  channel operator status.
+* Renamed `Nickname` to `UserHostInfo`. `Nickname` is now a deprecated alias of
+  `UserHostInfo`.
+* Added `ISet`, a case-insensitive `set` class.
+* Fixed minor documentation errors.
