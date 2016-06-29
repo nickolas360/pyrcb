@@ -138,24 +138,40 @@ except for ones under :ref:`delay-options`.
 
 .. attribute:: IRCBot.nicklist
 
-   A dictionary which maps channel names to lists of the nicknames of users in
-   those channels.
+   A dictionary which maps channel names to collections of the nicknames of
+   users in those channels.
 
    For example::
 
-      >>> IRCBot.nicklist["#channel-name"]
-      ["nickname1", "nickname2", "nickname3"]
+      >>> list(bot.nicklist["#channel-name"])
+      [IStr('nickname1'), IStr('nickname2'), IStr('nickname3')]
 
    Keys are case-insensitive, as are the nicknames retrieved from the a
-   dictionary lookup. If there is no list of nicknames for a particular
-   channel, a dictionary lookup will return an empty list instead of producing
-   an error.
+   dictionary lookup. If there is no collection of nicknames for a particular
+   channel, a dictionary lookup will return an empty collection instead of
+   producing an error.
 
-   Nicknames are of type `IStr`, but have two additional boolean attributes:
-   ``is_voiced`` and ``is_op``, which specify whether or not each user is
-   voiced or is a channel operator.
+   The items retrieved from dictionary lookups are actually dictionaries
+   themselves: each nicklist is an `IDefaultDict` instance that maps a nickname
+   to a `VoiceOpInfo` object. These objects behave just like normal `IStr`
+   nicknames, but have two additional attributes: `~VoiceOpInfo.is_voiced` and
+   `~VoiceOpInfo.is_op`.
 
-   :type: `IDefaultDict`; maps `str` to `list` of `IStr`
+   However, you can still iterate over these dictionaries like lists or sets.
+   ``for nickname in bot.nicklist["#channel"]:`` will iterate over the keys in
+   the dictionary, which are normal `IStr` nicknames. ::
+
+      >>> bot.nicklist["#test-channel"]
+      IDefaultDict([(IStr('nickname'), VoiceOpInfo('nickname'))])
+      >>> nickname = bot.nicklist["#test-channel"]["nickname"]
+      >>> nickname
+      VoiceOpInfo('nickname')
+      >>> nickname.is_voiced
+      True
+      >>> nickname.is_op
+      False
+
+   :type: `IDefaultDict`; maps `str` to `IDefaultDict`
 
 .. _delay-options:
 
@@ -197,9 +213,45 @@ IDefaultDict
 .. autoclass:: IDefaultDict
    :show-inheritance:
 
-Nickname
---------
+ISet
+----
 
-.. autoclass:: Nickname(\*args, username, hostname, \*\*kwargs)
+.. autoclass:: ISet
    :show-inheritance:
 
+UserHostInfo
+------------
+
+.. autoclass:: UserHostInfo(\*args, username, hostname, \*\*kwargs)
+   :show-inheritance:
+
+   .. attribute:: UserHostInfo.username
+
+      The user's username (not to be confused with the user's nickname). This
+      attribute may be ``None`` if unknown.
+
+      :type: `str`
+
+   .. attribute:: UserHostInfo.hostname
+
+      The user's hostname. This attribute may be ``None`` if unknown.
+
+      :type: `str`
+
+VoiceOpInfo
+-----------
+
+.. autoclass:: VoiceOpInfo(\*args, is_voiced, is_op, \*\*kwargs)
+   :show-inheritance:
+
+   .. attribute:: is_voiced
+
+      Whether or not the user is voiced.
+
+      :type: `bool`
+
+   .. attribute:: is_op
+
+      Whether or not the user is a channel operator.
+
+      :type: `bool`
