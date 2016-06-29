@@ -1107,6 +1107,10 @@ class IDefaultDict(OrderedDict):
     .. _IRC case rules: https://tools.ietf.org/html/rfc2812#section-2.2
     """
     def __init__(self, default_factory=None, *args, **kwargs):
+        factory_valid = (
+            default_factory is None or hasattr(default_factory, "__call__"))
+        if not factory_valid:
+            raise TypeError("First argument must be callable or None.")
         super(IDefaultDict, self).__init__(*args, **kwargs)
         self.default_factory = default_factory
 
