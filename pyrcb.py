@@ -958,7 +958,7 @@ def safe_print(string, file=sys.stdout):
 def istr_methods(cls):
     def get_method(name):
         def method(self, string, *args, **kwargs):
-            if isinstance(string, (str, type(""))):
+            if isinstance(string, (str, ustr)):
                 string = IStr.make_lower(string)
             return getattr(self._lower, name)(string, *args, **kwargs)
         return method
@@ -975,7 +975,7 @@ def istr_methods(cls):
 def idefaultdict_methods(cls):
     def get_method(name):
         def method(self, key, *args, **kwargs):
-            if isinstance(key, (str, type(""))):
+            if not isinstance(key, IStr) and isinstance(key, (str, ustr)):
                 key = IStr(key)
             return getattr(super(cls, self), name)(key, *args, **kwargs)
         return method
