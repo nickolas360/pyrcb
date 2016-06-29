@@ -52,7 +52,8 @@ messages, for example, you would write something like this::
 
         def on_invite(self, nickname, target, channel):
             # In custom event handlers, only the first parameter is
-            # case-insensitive. Other parameters must be manually converted.
+            # case-insensitive. Other parameters must be manually
+            # converted.
             channel, target = IStr(channel), IStr(target)
             print(nickname, "has invited", target, "to", channel)
 
