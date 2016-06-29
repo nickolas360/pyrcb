@@ -19,9 +19,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from mocks import mock_event, get_mock_create_connection, MockSocket
 from mocks import MockSSLContext, MockClock, MockEvent, MockDelaySocket
-from pyrcb import IRCBot, IDefaultDict, IStr, Nickname, ustr
+from pyrcb import IRCBot, IDefaultDict, IStr, ISet, ustr
+from pyrcb import UserHostInfo, VoiceOpInfo
 from unittest import TestCase
-from collections import Counter
 import pyrcb
 import unittest
 import errno
@@ -44,15 +44,6 @@ class BaseTest(TestCase):
         patch_obj = mock.patch(*args, **kwargs)
         patch_obj.start()
         self.addCleanup(patch_obj.stop)
-
-    # Not all versions of mock have assertCountEqual().
-    def assertCountEqual(self, first, second):
-        if hasattr(super(BaseTest, self), "assertCountEqual"):
-            return super(BaseTest, self).assertCountEqual(first, second)
-        self.assertEqual(Counter(first), Counter(second))
-
-    def assertCountEqualIStr(self, first, second):
-        self.assertCountEqual(map(IStr, first), map(IStr, second))
 
     def assertCalled(self, *args, **kwargs):
         func, args = args[0], args[1:]
@@ -218,6 +209,9 @@ class TestEvents(BaseBotTest):
         @mock_event(self.bot, "on_join")
         def on_join(nickname, channel):
             self.assertInNicklist(nickname, channel)
+            nickname = self.bot.nicklist[channel][nickname]
+            self.assertEqual(nickname.is_voiced, False)
+            self.assertEqual(nickname.is_op, False)
         self.handle_line(":newuser JOIN #test2")
         self.assertEventCalled(on_join, "newuser", "#test2")
 
@@ -247,7 +241,7 @@ class TestEvents(BaseBotTest):
         @mock_event(self.bot, "on_quit")
         def on_quit(nickname, message, channels):
             self.assertEqual([nickname, message], ["user2", "Quit message"])
-            self.assertCountEqualIStr(channels, ["#test1", "#test2"])
+            self.assertEqual(channels, {"#test1", "#test2"})
         self.handle_line(":user2 QUIT :Quit message")
         self.assertEqual(on_quit.call_count, 1)
 
@@ -255,7 +249,7 @@ class TestEvents(BaseBotTest):
         @mock_event(self.bot, "on_quit")
         def on_quit(nickname, message, channels):
             self.assertEqual([nickname, message], ["self", "Quit message"])
-            self.assertCountEqualIStr(channels, ["#test1", "#test2"])
+            self.assertEqual(channels, {"#test1", "#test2"})
             self.assertNotInChannels("#test1", "#test2")
         self.handle_line(":self QUIT :Quit message")
         self.assertEqual(on_quit.call_count, 1)
@@ -323,13 +317,24 @@ class TestEvents(BaseBotTest):
     def test_on_names(self):
         @mock_event(self.bot, "on_names")
         def on_names(channel, names):
-            self.assertCountEqualIStr(self.bot.nicklist[channel], names)
-            self.assertCountEqualIStr(names, ["a", "b", "self"])
-            for n1, n2, n3 in [names, self.bot.nicklist[channel]]:
-                self.assertEqual((n1.is_op, n1.is_voiced), (True, False))
-                self.assertEqual((n2.is_op, n2.is_voiced), (False, True))
-                self.assertEqual((n3.is_op, n3.is_voiced), (False, False))
-        self.handle_line(":server 353 self = #test1 :@a +b self")
+            self.assertEqual(list(self.bot.nicklist[channel].values()), names)
+            self.assertEqual(names, ["a", "user1", "self"])
+
+            # name -> (is_voiced, is_op)
+            correct = IDefaultDict(None, {
+                "a": (False, True),
+                "user1": (True, False),
+                "self": (False, False),
+            })
+
+            nicklist = self.bot.nicklist[channel]
+            for name in names:
+                self.assertEqual(name.is_voiced, correct[name][0])
+                self.assertEqual(name.is_op, correct[name][1])
+                self.assertEqual(name.is_voiced, nicklist[name].is_voiced)
+                self.assertEqual(name.is_op, nicklist[name].is_op)
+
+        self.handle_line(":server 353 self = #test1 :@a +user1 self")
         self.handle_line(":server 366 self #test1 :End of names")
         self.assertEqual(on_names.call_count, 1)
 
@@ -338,7 +343,7 @@ class TestEvents(BaseBotTest):
         def on_names(channel, names):
             pass
         self.handle_line(":server 366 self #test1 :End of names")
-        self.assertEventCalled(on_names, "#test1", [])
+        self.assertEventCalled(on_names, "#test1", ISet())
 
     def test_on_raw(self):
         @mock_event(self.bot, "on_raw")
@@ -347,6 +352,21 @@ class TestEvents(BaseBotTest):
         self.handle_line(":nick COMMAND arg1 arg2 :arg with spaces")
         self.assertEventCalled(
             on_raw, "nick", "COMMAND", ["arg1", "arg2", "arg with spaces"])
+
+    def test_on_mode(self):
+        self.handle_line(":sender MODE self +i")
+        self.handle_line(":sender MODE #test1 +ov user2 user1")
+        user1 = self.bot.nicklist["#test1"]["user1"]
+        user2 = self.bot.nicklist["#test1"]["user2"]
+        self.assertEqual((user1.is_voiced, user1.is_op), (True, False))
+        self.assertEqual((user2.is_voiced, user2.is_op), (False, True))
+        self.assertFalse(self.bot.nicklist["#test2"]["user1"].is_voiced)
+
+        self.handle_line(":sender MODE #test1 -v+v user1 user2")
+        user1 = self.bot.nicklist["#test1"]["user1"]
+        user2 = self.bot.nicklist["#test1"]["user2"]
+        self.assertEqual((user1.is_voiced, user1.is_op), (False, False))
+        self.assertEqual((user2.is_voiced, user2.is_op), (True, True))
 
     def test_register_event(self):
         # Can't use mocks because IRCBot._handle() looks up the function
@@ -426,7 +446,7 @@ class TestConnect(BaseBotTest):
 
     def test_register_nickname_in_use(self):
         self.bot.connect("example.com", 6667)
-        self.from_server(":server 433 * test-nickname :Nickname in use")
+        self.from_server(":server 433 * test-nickname :UserHostInfo in use")
         with self.assertRaises(ValueError):
             self.bot.register("test-nickname")
 
@@ -594,7 +614,7 @@ class TestMisc(BaseBotTest):
     def test_parse(self):
         nick, cmd, args = IRCBot.parse(
             ":nickname!user@host.name COMMAND arg1 arg2 :trailing arg")
-        self.assertIs(type(nick), Nickname)
+        self.assertIs(type(nick), UserHostInfo)
         self.assertIs(type(cmd), IStr)
         for arg in args:
             self.assertIs(type(arg), ustr)
@@ -707,31 +727,69 @@ class TestCaseInsensitiveClasses(BaseTest):
         self.assertEqual(IStr("Test^").upper(), "TEST~")
 
     def test_idefaultdict(self):
-        d = IDefaultDict(int)
+        with self.assertRaises(TypeError):
+            IDefaultDict("test")
+        d = IDefaultDict(int, test=20)
         d["Test^"] = 10
         d["TEST~"] += 5
+        self.assertEqual(d["Test"], 20)
         self.assertEqual(d["TEST~"], 15)
-        self.assertEqual(str(list(d.keys())[0]), "Test^")
+        self.assertEqual(str(list(d.keys())[1]), "Test^")
+        self.assertEqual(d["test2"], 0)
 
     def test_idefaultdict_order(self):
-        d = IDefaultDict()
-        keys = "qwertyuiopasdfghjklzxcvbnm"
+        d = IDefaultDict(None, [("q", 0), ("w", 0)], e=0)
+        keys = "rtyuiopasdfghjklzxcvbnm"
         for key in keys:
             d[key] = 0
-        self.assertEqual("".join(list(d.keys())), keys)
+        self.assertEqual("".join(list(d.keys())), "qwe" + keys)
 
     def test_idefaultdict_missing(self):
         d = IDefaultDict()
         with self.assertRaises(KeyError):
             d["test"]
 
-    def test_nickname(self):
-        nick = Nickname("Test", username="user", hostname="host")
+    def test_iset(self):
+        s = ISet(["test1"])
+        s.add("Test2")
+        s.add("TEST3")
+        s -= {"test2"}
+        self.assertTrue("TEST1" in s)
+        self.assertTrue("test3" in s)
+        self.assertFalse("test2" in s)
+        self.assertFalse("test1" in s ^ {"Test1"})
+        self.assertEqual(s, {"TEST1", "Test3"})
+
+    def test_userhostinfo(self):
+        nick = UserHostInfo("Test", username="user", hostname="host")
         self.assertEqual(nick, "TEST")
         self.assertEqual(nick.username, "user")
         self.assertEqual(nick.hostname, "host")
+
+    def test_userhostinfo_missing_args(self):
         with self.assertRaises(TypeError):
-            Nickname("Test")
+            UserHostInfo("Test")
+        with self.assertRaises(TypeError):
+            UserHostInfo("Test", username="test")
+        with self.assertRaises(TypeError):
+            UserHostInfo("Test", hostname="test")
+
+    def test_voiceopinfo(self):
+        nick = VoiceOpInfo("Test", is_voiced=True, is_op=False)
+        self.assertEqual(nick, "TEST")
+        self.assertTrue(nick.is_voiced)
+        self.assertFalse(nick.is_op)
+        nick = VoiceOpInfo("Test", is_voiced=False, is_op=True)
+        self.assertFalse(nick.is_voiced)
+        self.assertTrue(nick.is_op)
+
+    def test_voiceopinfo_missing_args(self):
+        with self.assertRaises(TypeError):
+            VoiceOpInfo("Test")
+        with self.assertRaises(TypeError):
+            VoiceOpInfo("Test", is_voiced=True)
+        with self.assertRaises(TypeError):
+            VoiceOpInfo("Test", is_op=True)
 
 if __name__ == "__main__":
     unittest.main()
