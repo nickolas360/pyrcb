@@ -91,9 +91,8 @@ class IRCBot(object):
         self.nickname = None
         self.channels = []
 
-        self._names_buffer = IDefaultDict(list)
-        self.old_nicklist = IDefaultDict(list)
-        self.nicklist = IDefaultDict(list)
+        self._names_buffer = IDefaultDict(IDefaultDict)
+        self.nicklist = IDefaultDict(IDefaultDict)
 
         # Buffer of delayed messages. Stores tuples of the time
         # to be sent and the message text.
@@ -116,9 +115,10 @@ class IRCBot(object):
         self.register_event(self._on_part, "PART")
         self.register_event(self._on_quit, "QUIT")
         self.register_event(self._on_kick, "KICK")
-        self.register_event(self._on_nick, "NICK")
         self.register_event(self._on_message, "PRIVMSG")
         self.register_event(self._on_notice, "NOTICE")
+        self.register_event(self._on_nick, "NICK")
+        self.register_event(self._on_mode, "MODE")
         self.register_event(self._on_353_namreply, "353")
         self.register_event(self._on_366_endofnames, "366")
         self.register_event(self._on_433_nicknameinuse, "433")
@@ -299,18 +299,34 @@ class IRCBot(object):
         self.replace_nickname(nickname, new_nickname)
         self.on_nick(nickname, new_nickname)
 
+    def _on_mode(self, sender, channel, modes, *names):
+        if not names:
+            return
+        nicklist = self.nicklist[channel]
+        index = 0
+        for char in modes:
+            if char in "+-":
+                plus = char == "+"
+                continue
+            nickname = names[index]
+            if char == "v":
+                nicklist[nickname] = nicklist[nickname].replace(is_voiced=plus)
+            elif char == "o":
+                nicklist[nickname] = nicklist[nickname].replace(is_op=plus)
+            index += 1
+
     def _on_353_namreply(self, server, target, chan_type, channel, names):
         for name in names.split():
             is_op = name.startswith("@")
             is_voiced = name.startswith("+")
-            name = IStr(name.lstrip("@+"))
-            name.is_op, name.is_voiced = is_op, is_voiced
-            self._names_buffer[channel].append(name)
+            name = name.lstrip("@+")
+            vo_info = VoiceOpInfo(name, is_voiced=is_voiced, is_op=is_op)
+            self._names_buffer[channel][name] = vo_info
 
     def _on_366_endofnames(self, server, target, channel, *args):
         self.nicklist.update(self._names_buffer)
         for chan, names in self._names_buffer.items():
-            self.on_names(chan, names)
+            self.on_names(chan, list(names.values()))
         if channel not in self._names_buffer:
             self.on_names(IStr(channel), [])
         self._names_buffer.clear()
@@ -389,9 +405,7 @@ class IRCBot(object):
 
         :param IStr channel: The channel that the list of users describes.
         :param list names: A list of nicknames of users in the channel.
-          Nicknames are of type `IStr`, but have two additional boolean
-          attributes: ``is_voiced`` and ``is_op``, which specify whether or not
-          each user is voiced or is a channel operator.
+          Nicknames are of type `VoiceOpInfo`.
         """
 
     def on_raw(self, nickname, command, args):
@@ -759,33 +773,37 @@ class IRCBot(object):
     # Adds a nickname to channels' nicklists and adds channels
     # to the list of channels if this bot is being added.
     def add_nickname(self, nickname, channels):
+        nickname = IStr(nickname)
         for channel in channels:
             if nickname == self.nickname:
                 self.channels.append(IStr(channel))
-            self.nicklist[channel].append(IStr(nickname))
+            vo_info = VoiceOpInfo(nickname, is_voiced=False, is_op=False)
+            self.nicklist[channel][nickname] = vo_info
 
     # Removes a nickname from channels' nicklists and removes channels
     # from the list of channels if this bot is being removed.
     def remove_nickname(self, nickname, channels):
-        removed_channels = []
+        removed_channels = ISet()
         pairs = [(c, self.nicklist[c]) for c in channels]
         pairs = [(c, n) for c, n in pairs if nickname in n]
         for channel, nicklist in pairs:
             if nickname == self.nickname and channel in self.channels:
                 self.channels.remove(channel)
-            nicklist.remove(nickname)
-            removed_channels.append(channel)
+            nicklist.pop(nickname, None)
+            removed_channels.add(channel)
         return removed_channels
 
     # Replaces a nickname in all joined channels' nicklists.
     def replace_nickname(self, nickname, new_nickname):
+        new_nickname = IStr(new_nickname)
         if nickname == self.nickname:
             self.nickname = new_nickname
         for channel in self.channels:
             nicklist = self.nicklist[channel]
             if nickname in nicklist:
-                nicklist.remove(nickname)
-                nicklist.append(IStr(new_nickname))
+                vo_info = nicklist[nickname].replace(nickname=new_nickname)
+                nicklist.pop(nickname, None)
+                nicklist[new_nickname] = vo_info
 
     # Gets the maximum number of bytes the trailing argument of
     # an IRC message can be without possibly being cut off.
@@ -1076,12 +1094,42 @@ class Nickname(IStr):
         kwargs.pop("hostname", None)
         return super(Nickname, cls).__new__(cls, *args, **kwargs)
 
+
+class VoiceOpInfo(IStr):
+    """A subclass of `IStr` that represents a nickname and also stores the
+    associated user's voice and operator status. This class behaves just like
+    `IStr`; it simply has extra attributes.
+
+    Nicknames in `IRCBot.nicklist` are of this type, so you can easily check if
+    a user is voiced or is a channel operator. See `IRCBot.nicklist` for more
+    information.
+
+    It shouldn't be necessary to create objects of this type.
+    """
+    def __new__(cls, *args, **kwargs):
+        kwargs.pop("is_voiced", None)
+        kwargs.pop("is_op", None)
+        return super(VoiceOpInfo, cls).__new__(cls, *args, **kwargs)
+
     def __init__(self, *args, **kwargs):
         try:
-            self.username = kwargs.pop("username")
-            self.hostname = kwargs.pop("hostname")
-        except KeyError:
+            self._is_voiced = kwargs.pop("is_voiced")
+            self._is_op = kwargs.pop("is_op")
+        except KeyError as e:
             raise TypeError(
-                "Keyword-only arguments 'username' "
-                "and 'hostname' are required.")
-        super(Nickname, self).__init__(*args, **kwargs)
+                "Keyword-only argument '{0}' is required.".format(e.args[0]))
+        super(VoiceOpInfo, self).__init__(*args, **kwargs)
+
+    @property
+    def is_voiced(self):
+        return self._is_voiced
+
+    @property
+    def is_op(self):
+        return self._is_op
+
+    def replace(self, nickname=None, is_voiced=None, is_op=None):
+        nickname = self if nickname is None else nickname
+        is_voiced = self.is_voiced if is_voiced is None else is_voiced
+        is_op = self.is_op if is_op is None else is_op
+        return VoiceOpInfo(nickname, is_voiced=is_voiced, is_op=is_op)
