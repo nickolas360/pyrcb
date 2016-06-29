@@ -1065,7 +1065,8 @@ class IStr(ustr):
         return hash(self._lower)
 
     def __repr__(self):
-        return "IStr({0})".format(super(IStr, self).__repr__())
+        name = type(self).__name__
+        return "{0}({1})".format(name, super(IStr, self).__repr__())
 
     def lower(self):
         return self._lower
