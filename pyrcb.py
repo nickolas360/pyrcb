@@ -338,14 +338,14 @@ class IRCBot(object):
     def on_join(self, nickname, channel):
         """Called when a user joins a channel. (``JOIN`` command)
 
-        :param Nickname nickname: The nickname of the user.
+        :param UserHostInfo nickname: The nickname of the user.
         :param IStr channel: The channel being joined.
         """
 
     def on_part(self, nickname, channel, message):
         """Called when a user leaves a channel. (``PART`` command)
 
-        :param Nickname nickname: The nickname of the user.
+        :param UserHostInfo nickname: The nickname of the user.
         :param IStr channel: The channel being left.
         :param str message: The part message.
         """
@@ -353,7 +353,7 @@ class IRCBot(object):
     def on_quit(self, nickname, message, channels):
         """Called when a user disconnects from the server. (``QUIT`` command)
 
-        :param Nickname nickname: The nickname of the user.
+        :param UserHostInfo nickname: The nickname of the user.
         :param str message: The quit message.
         :param list channels: A list of channels the user was in.
         """
@@ -361,7 +361,7 @@ class IRCBot(object):
     def on_kick(self, nickname, channel, target, message):
         """Called when a user is kicked from a channel. (``KICK`` command)
 
-        :param Nickname nickname: The nickname of the user that is kicking
+        :param UserHostInfo nickname: The nickname of the user that is kicking
           someone.
         :param IStr channel: The channel someone is being kicked from.
         :param IStr target: The nickname of the user being kicked. Check if
@@ -373,7 +373,7 @@ class IRCBot(object):
         """Called when a message is received. (``PRIVMSG`` command)
 
         :param str message: The text of the message.
-        :param Nickname nickname: The nickname of the user that sent the
+        :param UserHostInfo nickname: The nickname of the user that sent the
           message.
         :param IStr channel: The channel the message is in. If sent in a
           private query, this is `None`.
@@ -385,7 +385,7 @@ class IRCBot(object):
         """Called when a notice is received. (``NOTICE`` command)
 
         :param str message: The text of the notice.
-        :param Nickname nickname: The nickname of the user that sent the
+        :param UserHostInfo nickname: The nickname of the user that sent the
           notice.
         :param IStr channel: The channel the notice is in. If sent in a private
           query, this is `None`.
@@ -396,7 +396,7 @@ class IRCBot(object):
     def on_nick(self, nickname, new_nickname):
         """Called when a user changes nicknames. (``NICK`` command)
 
-        :param Nickname nickname: The user's old nickname.
+        :param UserHostInfo nickname: The user's old nickname.
         :param IStr new_nickname: The user's new nickname.
         """
 
@@ -412,8 +412,8 @@ class IRCBot(object):
         """Called when any IRC message is received. It is usually better to use
         :meth:`~IRCBot.register_event` instead of this method.
 
-        :param Nickname nickname: The nickname of the user (or the server in
-          some cases) that sent the message.
+        :param UserHostInfo nickname: The nickname of the user (or the server
+          in some cases) that sent the message.
         :param IStr command: The command (or numeric reply) received.
         :param list args: A list of arguments to the command. Arguments are of
           type `str`.
@@ -568,10 +568,10 @@ class IRCBot(object):
 
             function(self, nickname[, arg1, arg2, arg3...])
 
-        ``nickname`` (type `Nickname`, a subclass of `IStr`) is the nickname of
-        the user from whom the IRC message/command originated. When handling
-        numeric replies, it may be more appropriate to name this parameter
-        "server".
+        ``nickname`` (type `UserHostInfo`, a subclass of `IStr`) is the
+        nickname of the user from whom the IRC message/command originated. When
+        handling numeric replies, it may be more appropriate to name this
+        parameter "server".
 
         Optional parameters after ``nickname`` represent arguments to the IRC
         command. These are of type `str`, not `IStr`, so if any of the
@@ -714,7 +714,7 @@ class IRCBot(object):
             (?:\ :?(.*))?  # Trailing argument
             """, message, re.VERBOSE)
         nick, user, host, cmd, args, trailing = match.groups("")
-        nick = Nickname(nick, username=user, hostname=host)
+        nick = UserHostInfo(nick, username=user, hostname=host)
         cmd = IStr(cmd)
         args = args.split()
         if trailing:
@@ -1079,9 +1079,10 @@ class IDefaultDict(OrderedDict):
         return self[key]
 
 
-class Nickname(IStr):
+class UserHostInfo(IStr):
     """A subclass of `IStr` that represents a nickname and also stores the
-    associated user's username and hostname.
+    associated user's username and hostname. This class behaves just like
+    `IStr`; it simply has extra attributes.
 
     In `IRCBot` events, nicknames are sometimes of this type (when the command
     originated from the associated user). See individual methods' descriptions
@@ -1092,7 +1093,27 @@ class Nickname(IStr):
     def __new__(cls, *args, **kwargs):
         kwargs.pop("username", None)
         kwargs.pop("hostname", None)
-        return super(Nickname, cls).__new__(cls, *args, **kwargs)
+        return super(UserHostInfo, cls).__new__(cls, *args, **kwargs)
+
+    def __init__(self, *args, **kwargs):
+        try:
+            self._username = kwargs.pop("username")
+            self._hostname = kwargs.pop("hostname")
+        except KeyError as e:
+            raise TypeError(
+                "Keyword-only argument '{0}' is required.".format(e.args[0]))
+        super(UserHostInfo, self).__init__(*args, **kwargs)
+
+    @property
+    def username(self):
+        return self._username
+
+    @property
+    def hostname(self):
+        return self._hostname
+
+# Deprecated alias for UserHostInfo; do not use.
+Nickname = UserHostInfo
 
 
 class VoiceOpInfo(IStr):
