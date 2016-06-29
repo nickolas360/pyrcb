@@ -985,6 +985,43 @@ def idefaultdict_methods(cls):
     return cls
 
 
+# Decorator to implement case-insensitive methods for ISet.
+def iset_methods(cls):
+    def get_item_method(name):
+        def method(self, item, *args, **kwargs):
+            if not isinstance(item, IStr) and isinstance(item, (str, ustr)):
+                item = IStr(item)
+            return getattr(super(cls, self), name)(item, *args, **kwargs)
+        return method
+
+    def get_operation_method(name):
+        def method(self, _set, *args, **kwargs):
+            if not isinstance(_set, ISet):
+                _set = ISet(_set)
+            result = getattr(super(cls, self), name)(_set, *args, **kwargs)
+            if isinstance(result, set) and not isinstance(result, ISet):
+                result = ISet(result)
+            return result
+        return method
+
+    operators = [
+        "sub", "isub", "and", "iand", "le", "lt", "ge", "gt", "xor", "ixor",
+        "or", "ior", "eq", "ne"]
+    operation_methods = [
+        "difference", "difference_update", "intersection",
+        "intersection_update", "isdisjoint", "issubset", "issuperset",
+        "symmetric_difference", "symmetric_difference_update", "union",
+        "update"]
+    for name in operators:
+        name = "__{0}__".format(name)
+        setattr(cls, name, get_operation_method(name))
+    for name in operation_methods:
+        setattr(cls, name, get_operation_method(name))
+    for name in ["add", "discard", "remove", "__contains__"]:
+        setattr(cls, name, get_item_method(name))
+    return cls
+
+
 # Inherits from unicode in Python 2 and str in Python 3.
 @istr_methods
 class IStr(ustr):
@@ -1077,6 +1114,28 @@ class IDefaultDict(OrderedDict):
             raise KeyError(key)
         self[key] = self.default_factory()
         return self[key]
+
+
+@iset_methods
+class ISet(set):
+    """A case-insensitive `set` class based on `IRC case rules`_.
+
+    Item equality is case-insensitive. Items are converted to `IStr` during all
+    operations. For example::
+
+        >>> x = ISet(["TEST"])
+        >>> x.add("another_test")
+        >>> x
+        ISet({IStr('TEST'), IStr('another_test')})
+        >>> x - {"test"}
+        ISet({IStr('another_test')})
+
+    .. _IRC case rules: https://tools.ietf.org/html/rfc2812#section-2.2
+    """
+    def __init__(self, iterable=None):
+        if iterable is not None:
+            for item in iterable:
+                self.add(item)
 
 
 class UserHostInfo(IStr):
