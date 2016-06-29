@@ -581,7 +581,8 @@ class IRCBot(object):
         If the number of IRC arguments received is less than the number
         ``function`` accepts, the remaining function arguments will be set to
         `None`.  This ensures that IRC commands with an optional last argument
-        will be handled correctly.
+        will be handled correctly. You can also use ``*args`` to capture a
+        variable number of arguments.
 
         Multiple events can be registered for the same IRC command, but is
         usually isn't necessary to do this.
@@ -620,14 +621,14 @@ class IRCBot(object):
         """Splits a string into pieces that will take up no more than the
         specified number of bytes when encoded as UTF-8.
 
-        IRC messages are limited to 512 bytes, so sometimes it is necessary to
+        IRC messages are limited to 512 bytes, so it is sometimes necessary to
         split longer messages. This method splits strings based on how many
         bytes, rather than characters, they take up, keeping multi-byte
         characters intact. For example::
 
             >>> IRCBot.split_string("This is a test§§§§", 8)
             ["This is", "a", "test§§", "§§"]
-            >>> IRCBot.split_string("This is a test§§§§", 8, whitespace=False)
+            >>> IRCBot.split_string("This is a test§§§§", 8, nobreak=False)
             ["This is ", "a test§", "§§§"]
             >>> IRCBot.split_string("This is a test§§§§", 8, once=True)
             ["This is", "a test§§§§"]
@@ -813,7 +814,7 @@ class IRCBot(object):
         # <host> is 63 characters maximum
         mask = len(":" + self.nickname + "!") + 10 + len("@") + 63
         msg = mask + len(" " + " ".join(args) + " :\r\n")
-        # IRC messages are limited to 512 characters.
+        # IRC messages are limited to 512 bytes.
         return 512 - msg
 
     # Adds a delayed message, or sends the message if delays are off.
@@ -1097,7 +1098,7 @@ class IDefaultDict(OrderedDict):
     rules`_.
 
     Key equality is case-insensitive. Keys are converted to `IStr` upon
-    assignment and retrieval. Keys should be only of type `str` or `IStr`.
+    assignment (as long as they are instances of `str` or `unicode`).
 
     This class is actually a subclass of `~collections.OrderedDict`, so keys
     are kept in the order they were added in, but the functionality of
