@@ -24,6 +24,10 @@ To use pyrcb, just drop `pyrcb.py`_ (`raw`_) into your project. Make sure you
 include a copy of the `LGPL`_ as well as the `GPL`_, since the LGPL is a set of
 additional permissions on top of the GPL.
 
+Alternatively, you can include the whole pyrcb repository in your project. You
+can still use pyrcb normally (as if pyrcb.py were in your project) with this
+configuration; there's no need to import ``pyrcb.pyrcb``.
+
 .. _pyrcb.py: https://github.com/nickolas360/pyrcb/blob/master/pyrcb.py
 .. _raw: https://raw.githubusercontent.com/nickolas360/pyrcb/master/pyrcb.py
 .. _LGPL: https://www.gnu.org/licenses/lgpl.txt
