@@ -981,7 +981,10 @@ def idefaultdict_methods(cls):
             return getattr(super(cls, self), name)(key, *args, **kwargs)
         return method
 
-    for name in ["get", "__getitem__", "__setitem__", "__contains__"]:
+    for name in ["get", "pop"]:
+        setattr(cls, name, get_method(name))
+    for name in ["getitem", "setitem", "delitem", "contains"]:
+        name = "__{0}__".format(name)
         setattr(cls, name, get_method(name))
     return cls
 
