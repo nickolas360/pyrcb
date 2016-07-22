@@ -20,6 +20,18 @@
 Changelog
 =========
 
+.. _changelog-1.13.1:
+
+1.13.1
+------
+
+* The ``pop()`` and ``__delitem__()`` methods of `IDefaultDict` are now
+  case-insensitive. This caused problems when users with capital letters
+  in their names left channels.
+* Bots now request the IRCv3 ``multi-prefix`` extension, unless ``send_cap`` in
+  :meth:`IRCBot.connect` is false. This allows users who are both voiced and
+  channel operators to be tracked properly.
+
 .. _changelog-1.13.0:
 
 1.13.0
