@@ -322,7 +322,7 @@ class TestEvents(BaseBotTest):
 
             # name -> (is_voiced, is_op)
             correct = IDefaultDict(None, {
-                "a": (False, True),
+                "a": (True, True),
                 "user1": (True, False),
                 "self": (False, False),
             })
@@ -334,7 +334,7 @@ class TestEvents(BaseBotTest):
                 self.assertEqual(name.is_voiced, nicklist[name].is_voiced)
                 self.assertEqual(name.is_op, nicklist[name].is_op)
 
-        self.handle_line(":server 353 self = #test1 :@a +user1 self")
+        self.handle_line(":server 353 self = #test1 :@+a &+user1 self")
         self.handle_line(":server 366 self #test1 :End of names")
         self.assertEqual(on_names.call_count, 1)
 
@@ -425,6 +425,8 @@ class TestConnect(BaseBotTest):
         self.from_server(":server 001 test-nickname :Welcome")
         self.bot.register("test-nickname")
         self.assertSent(
+            "CAP REQ :multi-prefix",
+            "CAP :END",
             "USER test-nickname 8 * :test-nickname",
             "NICK :test-nickname")
 
@@ -433,6 +435,8 @@ class TestConnect(BaseBotTest):
         self.from_server(":server 001 test-nickname :Welcome")
         self.bot.register("test-nickname", "test-realname")
         self.assertSent(
+            "CAP REQ :multi-prefix",
+            "CAP :END",
             "USER test-nickname 8 * :test-realname",
             "NICK :test-nickname")
 
@@ -441,6 +445,8 @@ class TestConnect(BaseBotTest):
         self.from_server(":server 001 test-nickname :Welcome")
         self.bot.register("test-nickname", "test-realname", "test-username")
         self.assertSent(
+            "CAP REQ :multi-prefix",
+            "CAP :END",
             "USER test-username 8 * :test-realname",
             "NICK :test-nickname")
 
@@ -662,7 +668,7 @@ class TestMisc(BaseBotTest):
 
     def test_debug_print(self):
         self.bot = IRCBot(debug_print=True)
-        self.bot.connect("example.com", 6667)
+        self.bot.connect("example.com", 6667, send_cap=False)
         self.from_server(":test CMD :arg")
         with mock.patch("pyrcb.print", create=True):
             self.bot.readline()
