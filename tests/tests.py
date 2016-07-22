@@ -749,6 +749,19 @@ class TestCaseInsensitiveClasses(BaseTest):
         with self.assertRaises(KeyError):
             d["test"]
 
+    def test_idefaultdict_other_methods(self):
+        d = IDefaultDict(test=10)
+        self.assertIn("test", d)
+        del d["TEST"]
+        self.assertNotIn("test", d)
+
+        d["test"] = 15
+        self.assertEqual(d.get("TEST"), 15)
+        self.assertEqual(d.get("abc"), None)
+
+        self.assertEqual(d.pop("TEST"), 15)
+        self.assertNotIn("test", d)
+
     def test_iset(self):
         s = ISet(["test1"])
         s.add("Test2")
