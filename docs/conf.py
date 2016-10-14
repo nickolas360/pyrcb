@@ -306,9 +306,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'pyrcb', 'pyrcb Documentation',
-   author, 'pyrcb', 'A simple library for IRC bots.',
-   'Miscellaneous'),
+    (master_doc, 'pyrcb', 'pyrcb Documentation',
+     author, 'pyrcb', 'A simple library for IRC bots.',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
