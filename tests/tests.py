@@ -383,7 +383,7 @@ class TestEvents(BaseBotTest):
 
     def test_on_005_isupport(self):
         self.handle_line(":sender 005 self PREFIX=(ohv)@&+ NAME=value :s")
-        self.handle_line(":sender 005 self A=B CHANMODES=Ib,k,f,Ccm :s")
+        self.handle_line(":sender 005 self NAME2 CHANMODES=Ib,k,f,Ccm :s")
         self.assertEqual(self.bot._prefix_map, dict(zip("ohv", "@&+")))
         self.assertEqual(self.bot._chanmodes, ("Ib", "k", "f", "Ccm"))
 
