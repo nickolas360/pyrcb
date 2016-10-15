@@ -25,6 +25,14 @@
 Changelog
 =========
 
+.. _changelog-1.14.1:
+
+1.14.1
+------
+
+* Fixed a bug with ``RPL_ISUPPORT`` message handling that would cause bots to
+  crash.
+
 .. _changelog-1.14.0:
 
 1.14.0
