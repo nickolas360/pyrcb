@@ -249,14 +249,7 @@ VoiceOpInfo
 .. autoclass:: VoiceOpInfo(\*args, is_voiced, is_op, \*\*kwargs)
    :show-inheritance:
 
-   .. attribute:: is_voiced
-
-      Whether or not the user is voiced.
-
-      :type: `bool`
-
-   .. attribute:: is_op
-
-      Whether or not the user is a channel operator.
-
-      :type: `bool`
+   .. automethod:: has_prefix
+   .. autoattribute:: is_voiced
+   .. autoattribute:: is_op
+   .. autoattribute:: prefixes
