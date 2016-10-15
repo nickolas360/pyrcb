@@ -1,4 +1,4 @@
-.. Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
+.. Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
 
 .. This file is part of pyrcb-docs, documentation for pyrcb.
    pyrcb-docs is licensed under the following two licenses:
@@ -22,18 +22,17 @@
 
 .. currentmodule:: pyrcb
 
-Release notes
-=============
+Changelog
+=========
 
-.. toctree::
-   :maxdepth: 2
+.. _changelog-1.14.0:
 
-   1.14/index
-   1.13/index
-   1.12/index
-   1.11/index
-   1.10/index
-   1.9/index
-   1.8/index
-   1.7/index
-   1.6/index
+1.14.0
+------
+
+* `VoiceOpInfo` now supports all prefixes, not just "@" and "+".
+* Mode tracking is now more accurate and less prone to errors.
+* An error no longer occurs when an event handler takes fewer arguments than
+  are available.
+* Fixed a bug with the ``kill_bot`` parameter in :meth:`IRCBot.start_thread`
+  (setting it to ``False`` would have no effect).
