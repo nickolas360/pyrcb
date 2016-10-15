@@ -1265,7 +1265,7 @@ class VoiceOpInfo(IStr):
     def prefixes(self):
         """This user's prefixes.
 
-        :type: `str`
+        :type: `frozenset`
         """
         return self._prefixes
 
