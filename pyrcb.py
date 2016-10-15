@@ -254,19 +254,19 @@ class IRCBot(object):
         :param str command: The command to send.
         :param list args: A list of arguments to the command.
         """
-        self.writeline(IRCBot.format(command, args))
+        self.writeline(self.format(command, args))
 
     def _privmsg_or_notice(self, target, message, split, nobreak, notice):
         messages = [message]
         if split:
             bytelen = self.safe_message_length(target, notice=notice)
             try:
-                messages = IRCBot.split_string(message, bytelen, nobreak)
+                messages = self.split_string(message, bytelen, nobreak)
             except ValueError:
                 pass
         command = ["PRIVMSG", "NOTICE"][notice]
         for msg in messages:
-            self.add_delayed(target, command, [target, msg])
+            self._add_delayed(target, command, [target, msg])
 
     # ==================
     # IRC event handlers
@@ -483,7 +483,7 @@ class IRCBot(object):
 
         self.alive = True
         if self.delay:
-            t = threading.Thread(target=self.delay_loop)
+            t = threading.Thread(target=self._delay_loop)
             t.daemon = True
             t.start()
 
@@ -503,6 +503,7 @@ class IRCBot(object):
         :param bool kill_bot: If true, the bot will be killed if ``target``
           raises an exception.
         :returns: The new thread.
+        :rtype: `threading.Thread`
         """
         def wrapper(*args, **kwargs):
             exception = False
@@ -589,6 +590,7 @@ class IRCBot(object):
         :param float timeout: A timeout for the operation in seconds.
         :returns: `True` if the method returned because the bot lost connection
           or `False` if the operation timed out.
+        :rtype: `bool`
         """
         return self.listen_event.wait(timeout)
 
@@ -616,7 +618,7 @@ class IRCBot(object):
         will be handled correctly. You can also use ``*args`` to capture a
         variable number of arguments.
 
-        Multiple events can be registered for the same IRC command, but is
+        Multiple events can be registered for the same IRC command, but it
         usually isn't necessary to do this.
 
         :param callable function: The event handler.
@@ -644,12 +646,12 @@ class IRCBot(object):
         """
         return self.safe_length(["PRIVMSG", "NOTICE"][notice], target)
 
-    # ==============
-    # Static methods
-    # ==============
+    # =============
+    # Class methods
+    # =============
 
-    @staticmethod
-    def split_string(string, bytelen, nobreak=True, once=False):
+    @classmethod
+    def split_string(cls, string, bytelen, nobreak=True, once=False):
         """Splits a string into pieces that will take up no more than the
         specified number of bytes when encoded as UTF-8.
 
@@ -683,10 +685,11 @@ class IRCBot(object):
         :param bool once: If true, the string will only be split once. The
           second piece is not guaranteed to be less than ``bytelen``.
         :returns: A list of the split string pieces.
+        :rtype: `list`
         """
         result = []
         rest = string
-        split_func = IRCBot.split_nobreak if nobreak else IRCBot.split_once
+        split_func = cls.split_nobreak if nobreak else cls.split_once
         while not result or (rest and not once):
             split, rest = split_func(rest, bytelen)
             result.append(split)
@@ -694,8 +697,8 @@ class IRCBot(object):
 
     # Splits a string based on the number of bytes it takes
     # up when encoded as UTF-8.
-    @staticmethod
-    def split_once(string, bytelen):
+    @classmethod
+    def split_once(cls, string, bytelen):
         if bytelen <= 0:
             raise ValueError("Number of bytes must be positive.")
         bytestr = string.encode("utf8")
@@ -714,9 +717,9 @@ class IRCBot(object):
     # Like split_once(), but splits only where whitespace occurs to avoid
     # breaking words (unless not possible). If present, once space character
     # between split strings will be removed (similar to WeeChat's behavior).
-    @staticmethod
-    def split_nobreak(string, bytelen):
-        split, rest = IRCBot.split_once(string, bytelen)
+    @classmethod
+    def split_nobreak(cls, string, bytelen):
+        split, rest = cls.split_once(string, bytelen)
         if not rest:
             return (split, rest)
         if not split[-1].isspace() and not rest[0].isspace():
@@ -732,8 +735,8 @@ class IRCBot(object):
         return (split, rest)
 
     # Parses an IRC message.
-    @staticmethod
-    def parse(message):
+    @classmethod
+    def parse(cls, message):
         # Regex to parse IRC messages.
         match = re.match(r"""
             (?::  # Start of prefix
@@ -745,7 +748,7 @@ class IRCBot(object):
             ([^ ]+)  # Command
             ((?:\ [^: ][^ ]*){0,14})  # Arguments
             (?:\ :?(.*))?  # Trailing argument
-            """, message, re.VERBOSE)
+        """, message, re.VERBOSE)
         nick, user, host, cmd, args, trailing = match.groups("")
         nick = UserHostInfo(nick, username=user, hostname=host)
         cmd = IStr(cmd)
@@ -755,8 +758,8 @@ class IRCBot(object):
         return (nick, cmd, args)
 
     # Formats an IRC message.
-    @staticmethod
-    def format(command, args=[]):
+    @classmethod
+    def format(cls, command, args=[]):
         command = ustr(command)
         args = list(map(ustr, args))
         if not all(args + [command]):
@@ -793,7 +796,7 @@ class IRCBot(object):
 
     # Parses an IRC message and calls the appropriate events.
     def _handle(self, message):
-        nickname, command, args = IRCBot.parse(message)
+        nickname, command, args = self.parse(message)
         for handler, nargs in self.events.get(command, []):
             handler_args = [nickname] + args
 
@@ -850,7 +853,7 @@ class IRCBot(object):
         return 512 - msg
 
     # Adds a delayed message, or sends the message if delays are off.
-    def add_delayed(self, target, command, args):
+    def _add_delayed(self, target, command, args):
         if not self.delay:
             self.send_raw(command, args)
             return
@@ -868,7 +871,7 @@ class IRCBot(object):
         self.delay_event.set()
 
     # Sends delayed messages at the appropriate time.
-    def delay_loop(self):
+    def _delay_loop(self):
         while self.alive:
             self.delay_event.clear()
             if any(self._delay_buffer):
