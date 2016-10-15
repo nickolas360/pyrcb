@@ -624,8 +624,8 @@ class IRCBot(object):
         :param callable function: The event handler.
         :param str command: The IRC command or numeric reply to listen for.
         """
-        nargs = get_required_args(function)
-        self.events[command].append((function, nargs))
+        nargs, varargs = get_required_args(function)
+        self.events[command].append((function, nargs, varargs))
 
     def safe_message_length(self, target, notice=False):
         """Gets the maximum number of bytes the text of an IRC PRIVMSG (or
@@ -797,12 +797,14 @@ class IRCBot(object):
     # Parses an IRC message and calls the appropriate events.
     def _handle(self, message):
         nickname, command, args = self.parse(message)
-        for handler, nargs in self.events.get(command, []):
+        for handler, nargs, varargs in self.events.get(command, []):
             handler_args = [nickname] + args
 
             # Fill in any extra arguments with None.
             if len(handler_args) < nargs:
                 handler_args += [None] * (nargs - len(handler_args))
+            if not varargs:
+                handler_args = handler_args[:nargs]
             handler(*handler_args)
         self.on_raw(nickname, command, args)
 
@@ -929,23 +931,29 @@ class IRCBot(object):
 # Gets the number of required positional arguments of a function.
 # Does not include the "self" parameter for bound methods.
 def get_required_args(func):
-    result = 0
     if hasattr(inspect, "signature"):
+        from inspect import Parameter
+        nargs = 0
+        varargs = False
         sig = inspect.signature(func)
         for param in sig.parameters.values():
+            has_default = param.default is not Parameter.empty
             is_positional = param.kind in [
-                inspect.Parameter.POSITIONAL_ONLY,
-                inspect.Parameter.POSITIONAL_OR_KEYWORD]
-            no_default = param.default is inspect.Parameter.empty
-            if is_positional and no_default:
-                result += 1
-        return result
+                Parameter.POSITIONAL_ONLY,
+                Parameter.POSITIONAL_OR_KEYWORD,
+            ]
+            if is_positional and not has_default:
+                nargs += 1
+            elif param.kind == Parameter.VAR_POSITIONAL:
+                varargs = True
+        return (nargs, varargs)
     spec = getattr(inspect, "getfullargspec", inspect.getargspec)(func)
-    result = len(spec.args) - len(spec.defaults or [])
+    nargs = len(spec.args) - len(spec.defaults or [])
+    varargs = spec.varargs is not None
     # Don't include the "self" parameter for bound methods.
     if hasattr(func, "__self__"):
-        result -= 1
-    return result
+        nargs -= 1
+    return (nargs, varargs)
 
 
 # Wraps a plain socket into an SSL one. Attempts to load default CA
