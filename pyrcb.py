@@ -97,6 +97,8 @@ class IRCBot(object):
         self.is_registered = False
         self.nickname = None
         self.channels = []
+        self._prefix_map = dict(zip("ov", "@+"))
+        self._chanmodes = ("", "", "", "")
 
         self._names_buffer = IDefaultDict(IDefaultDict)
         self.nicklist = IDefaultDict(IDefaultDict)
@@ -126,6 +128,7 @@ class IRCBot(object):
         self.register_event(self._on_notice, "NOTICE")
         self.register_event(self._on_nick, "NICK")
         self.register_event(self._on_mode, "MODE")
+        self.register_event(self._on_005_isupport, "005")
         self.register_event(self._on_353_namreply, "353")
         self.register_event(self._on_366_endofnames, "366")
         self.register_event(self._on_433_nicknameinuse, "433")
@@ -306,31 +309,44 @@ class IRCBot(object):
         self.replace_nickname(nickname, new_nickname)
         self.on_nick(nickname, new_nickname)
 
-    def _on_mode(self, sender, channel, modes, *names):
-        if not names:
-            return
+    def _on_mode(self, sender, channel, modes, *args):
         nicklist = self.nicklist[channel]
         index = 0
         for char in modes:
             if char in "+-":
                 plus = char == "+"
                 continue
-            nickname = names[index]
-            if char == "v":
-                nicklist[nickname] = nicklist[nickname].replace(is_voiced=plus)
-            elif char == "o":
-                nicklist[nickname] = nicklist[nickname].replace(is_op=plus)
-            index += 1
+            if char in self._prefix_map:
+                nick = args[index]
+                vo_info = nicklist[nick]
+                method = vo_info.add_prefix if plus else vo_info.remove_prefix
+                nicklist[nick] = method(self._prefix_map[char])
+            takes_arg = (
+                char in self._prefix_map or
+                char in self._chanmodes[0] or
+                char in self._chanmodes[1] or
+                char in self._chanmodes[2] and plus)
+            if takes_arg:
+                index += 1
+                if index >= len(args):
+                    return
+
+    def _on_005_isupport(self, server, target, *args):
+        for arg in args[:-1]:
+            name, value = arg.split("=", 1)
+            if name == "PREFIX":
+                modes, prefixes = value[1:].split(")", 1)
+                self._prefix_map = dict(zip(modes, prefixes))
+            elif name == "CHANMODES":
+                self._chanmodes = tuple((value + ",,,").split(",")[:4])
 
     def _on_353_namreply(self, server, target, chan_type, channel, names):
         nick_chars = r"a-zA-Z0-9-" + re.escape(r"[]\`_^{|}")
-        expr = "([^{}]*)(.*)".format(nick_chars)
+        expr = r"([^{}]*)(.*)".format(nick_chars)
         for name in names.split():
             match = re.match(expr, name)
             prefixes, name = match.groups()
-            is_op = "@" in prefixes
-            is_voiced = "+" in prefixes
-            vo_info = VoiceOpInfo(name, is_voiced=is_voiced, is_op=is_op)
+            vo_info = VoiceOpInfo(name, prefixes=prefixes)
             self._names_buffer[channel][name] = vo_info
 
     def _on_366_endofnames(self, server, target, channel, *args):
@@ -794,7 +810,7 @@ class IRCBot(object):
         for channel in channels:
             if nickname == self.nickname:
                 self.channels.append(IStr(channel))
-            vo_info = VoiceOpInfo(nickname, is_voiced=False, is_op=False)
+            vo_info = VoiceOpInfo(nickname)
             self.nicklist[channel][nickname] = vo_info
 
     # Removes a nickname from channels' nicklists and removes channels
@@ -1180,12 +1196,8 @@ class UserHostInfo(IStr):
         return super(UserHostInfo, cls).__new__(cls, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
-        try:
-            self._username = kwargs.pop("username")
-            self._hostname = kwargs.pop("hostname")
-        except KeyError as e:
-            raise TypeError(
-                "Keyword-only argument '{0}' is required.".format(e.args[0]))
+        self._username = kwargs.pop("username", None)
+        self._hostname = kwargs.pop("hostname", None)
         super(UserHostInfo, self).__init__(*args, **kwargs)
 
     @property
@@ -1202,8 +1214,9 @@ Nickname = UserHostInfo
 
 class VoiceOpInfo(IStr):
     """A subclass of `IStr` that represents a nickname and also stores the
-    associated user's voice and operator status. This class behaves just like
-    `IStr`; it simply has extra attributes.
+    associated user's voice and operator status (as well as the other prefixes
+    they have). This class behaves just like `IStr`; it simply has extra
+    attributes.
 
     Nicknames in `IRCBot.nicklist` are of this type, so you can easily check if
     a user is voiced or is a channel operator. See `IRCBot.nicklist` for more
@@ -1212,29 +1225,57 @@ class VoiceOpInfo(IStr):
     It shouldn't be necessary to create objects of this type.
     """
     def __new__(cls, *args, **kwargs):
-        kwargs.pop("is_voiced", None)
-        kwargs.pop("is_op", None)
+        kwargs.pop("prefixes", None)
         return super(VoiceOpInfo, cls).__new__(cls, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
-        try:
-            self._is_voiced = kwargs.pop("is_voiced")
-            self._is_op = kwargs.pop("is_op")
-        except KeyError as e:
-            raise TypeError(
-                "Keyword-only argument '{0}' is required.".format(e.args[0]))
+        self._prefixes = frozenset(kwargs.pop("prefixes", ()))
         super(VoiceOpInfo, self).__init__(*args, **kwargs)
 
     @property
     def is_voiced(self):
-        return self._is_voiced
+        """Whether or not this user is voiced.
+        Equivalent to ``.has_prefix("+")``.
+
+        :type: `bool`
+        """
+        return self.has_prefix("+")
 
     @property
     def is_op(self):
-        return self._is_op
+        """Whether or not this user is a channel operator.
+        Equivalent to ``.has_prefix("@")``.
 
-    def replace(self, nickname=None, is_voiced=None, is_op=None):
-        nickname = self if nickname is None else nickname
-        is_voiced = self.is_voiced if is_voiced is None else is_voiced
-        is_op = self.is_op if is_op is None else is_op
-        return VoiceOpInfo(nickname, is_voiced=is_voiced, is_op=is_op)
+        :type: `bool`
+        """
+        return self.has_prefix("@")
+
+    @property
+    def prefixes(self):
+        """This user's prefixes.
+
+        :type: `str`
+        """
+        return self._prefixes
+
+    def has_prefix(self, prefix):
+        """Checks if this user has a certain prefix.
+
+        :param str prefix: The prefix to look for.
+        :returns: Whether or not this user has the prefix.
+        :rtype: `bool`
+        """
+        return prefix in self._prefixes
+
+    def replace(self, **kwargs):
+        nickname = kwargs.pop("nickname", self)
+        kwargs.setdefault("prefixes", self.prefixes)
+        return type(self)(nickname, **kwargs)
+
+    def add_prefix(self, prefix):
+        prefixes = self.prefixes | set(prefix)
+        return self.replace(prefixes=prefixes)
+
+    def remove_prefix(self, prefix):
+        prefixes = self.prefixes - set(prefix)
+        return self.replace(prefixes=prefixes)
