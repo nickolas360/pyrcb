@@ -517,7 +517,7 @@ class IRCBot(object):
             with self.bg_thread_lock:
                 if thread not in self.bg_threads:
                     return
-                if exception:
+                if exception and kill_bot:
                     self.close_socket()
                 self.bg_threads.remove(thread)
 
