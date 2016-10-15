@@ -354,19 +354,38 @@ class TestEvents(BaseBotTest):
             on_raw, "nick", "COMMAND", ["arg1", "arg2", "arg with spaces"])
 
     def test_on_mode(self):
-        self.handle_line(":sender MODE self +i")
-        self.handle_line(":sender MODE #test1 +ov user2 user1")
+        self.handle_line(":sender 005 self PREFIX=(ohv)@&+ :s")
+        self.handle_line(":sender MODE #test1 +ovh user2 user1 user1")
         user1 = self.bot.nicklist["#test1"]["user1"]
         user2 = self.bot.nicklist["#test1"]["user2"]
         self.assertEqual((user1.is_voiced, user1.is_op), (True, False))
         self.assertEqual((user2.is_voiced, user2.is_op), (False, True))
+        self.assertEqual(user1.has_prefix("&"), True)
         self.assertFalse(self.bot.nicklist["#test2"]["user1"].is_voiced)
 
-        self.handle_line(":sender MODE #test1 -v+v user1 user2")
+        self.handle_line(":sender MODE #test1 -hv+v user1 user1 user2")
         user1 = self.bot.nicklist["#test1"]["user1"]
         user2 = self.bot.nicklist["#test1"]["user2"]
         self.assertEqual((user1.is_voiced, user1.is_op), (False, False))
         self.assertEqual((user2.is_voiced, user2.is_op), (True, True))
+        self.assertEqual(user1.has_prefix("&"), False)
+
+    def test_on_mode_with_chanmodes(self):
+        nicklist = self.bot.nicklist["#test1"]
+        self.handle_line(":sender 005 self CHANMODES=a,b,c,d :s")
+        self.handle_line(":sender 005 self PREFIX=(vho)+&@ :s")
+        self.handle_line(":s MODE #test1 +advch A user1 B user2")
+        self.assertTrue(nicklist["user1"].has_prefix("+"))
+        self.assertTrue(nicklist["user2"].has_prefix("&"))
+        self.handle_line(":s MODE #test1 +ob-cdh user1 A user2")
+        self.assertTrue(nicklist["user1"].has_prefix("@"))
+        self.assertFalse(nicklist["user2"].has_prefix("&"))
+
+    def test_on_005_isupport(self):
+        self.handle_line(":sender 005 self PREFIX=(ohv)@&+ NAME=value :s")
+        self.handle_line(":sender 005 self A=B CHANMODES=Ib,k,f,Ccm :s")
+        self.assertEqual(self.bot._prefix_map, dict(zip("ohv", "@&+")))
+        self.assertEqual(self.bot._chanmodes, ("Ib", "k", "f", "Ccm"))
 
     def test_register_event(self):
         # Can't use mocks because IRCBot._handle() looks up the function
@@ -561,7 +580,7 @@ class TestDelay(BaseBotTest):
         for i in range(30):
             self.bot.send("test", "Message {0}".format(i))
 
-        self.bot.delay_loop()
+        self.bot._delay_loop()
         self.assertEqual(len(self.bot.socket.received_messages), 30)
         time = 0
         for i, msg_tuple in enumerate(self.bot.socket.received_messages):
@@ -589,7 +608,7 @@ class TestDelay(BaseBotTest):
         self.bot.delay = True
         self.patch("threading.Thread")
         self.bot.connect("example.com", 6667)
-        self.assertCalled(threading.Thread, target=self.bot.delay_loop)
+        self.assertCalled(threading.Thread, target=self.bot._delay_loop)
 
 
 class TestCloseSocket(BaseBotTest):
@@ -785,30 +804,14 @@ class TestCaseInsensitiveClasses(BaseTest):
         self.assertEqual(nick.username, "user")
         self.assertEqual(nick.hostname, "host")
 
-    def test_userhostinfo_missing_args(self):
-        with self.assertRaises(TypeError):
-            UserHostInfo("Test")
-        with self.assertRaises(TypeError):
-            UserHostInfo("Test", username="test")
-        with self.assertRaises(TypeError):
-            UserHostInfo("Test", hostname="test")
-
     def test_voiceopinfo(self):
-        nick = VoiceOpInfo("Test", is_voiced=True, is_op=False)
+        nick = VoiceOpInfo("Test", prefixes="+")
         self.assertEqual(nick, "TEST")
         self.assertTrue(nick.is_voiced)
         self.assertFalse(nick.is_op)
-        nick = VoiceOpInfo("Test", is_voiced=False, is_op=True)
+        nick = VoiceOpInfo("Test", prefixes="@")
         self.assertFalse(nick.is_voiced)
         self.assertTrue(nick.is_op)
-
-    def test_voiceopinfo_missing_args(self):
-        with self.assertRaises(TypeError):
-            VoiceOpInfo("Test")
-        with self.assertRaises(TypeError):
-            VoiceOpInfo("Test", is_voiced=True)
-        with self.assertRaises(TypeError):
-            VoiceOpInfo("Test", is_op=True)
 
 if __name__ == "__main__":
     unittest.main()
