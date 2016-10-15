@@ -25,7 +25,15 @@ div.sphinxsidebar #searchbox input[type="text"] {
     width: 140px;
 }
 
+div.sphinxsidebar #searchbox form.search > div {
+    display: inline-block;
+}
+
 .admonition code.xref {
     background-color: transparent;
     border-bottom: none;
+}
+
+table.docutils.field-list th {
+    white-space: nowrap;
 }
