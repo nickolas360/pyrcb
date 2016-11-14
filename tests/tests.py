@@ -471,7 +471,7 @@ class TestConnect(BaseBotTest):
 
     def test_register_nickname_in_use(self):
         self.bot.connect("example.com", 6667)
-        self.from_server(":server 433 * test-nickname :UserHostInfo in use")
+        self.from_server(":server 433 * test-nickname :Nickname in use")
         with self.assertRaises(ValueError):
             self.bot.register("test-nickname")
 
