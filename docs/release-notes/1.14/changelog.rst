@@ -25,6 +25,14 @@
 Changelog
 =========
 
+.. _changelog-1.14.2:
+
+1.14.2
+------
+
+* Fixed a bug where :meth:`IRCBot.split_string` would not split properly with
+  ``once=True``.
+
 .. _changelog-1.14.1:
 
 1.14.1

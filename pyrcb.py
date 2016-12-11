@@ -18,9 +18,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public
-# License and the GNU Free Documentation License along with
-# this program.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -38,7 +37,7 @@ import traceback
 import time
 import warnings
 
-__version__ = "1.14.1"
+__version__ = "1.14.2"
 
 # ustr is unicode in Python 2 (because of unicode_literals)
 # and str in Python 3.
@@ -694,6 +693,8 @@ class IRCBot(object):
         while not result or (rest and not once):
             split, rest = split_func(rest, bytelen)
             result.append(split)
+        if rest:
+            result.append(rest)
         return result
 
     # Splits a string based on the number of bytes it takes

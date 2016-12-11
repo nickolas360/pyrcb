@@ -32,7 +32,7 @@ needed to easily create bots.
 pyrcb is compatible with Python 2.7 and Python 3.1 or higher. SSL/TLS support
 requires at least Python 2.7.9 or Python 3.2 (see :meth:`~IRCBot.connect`).
 
-The current version of pyrcb is **1.14.1**, which was released on 2016-10-15.
+The current version of pyrcb is **1.14.2**, which was released on 2016-12-11.
 See the :doc:`changelog <release-notes/1.14/changelog>` for more information.
 
 Source code for pyrcb (including this documentation) is available at
