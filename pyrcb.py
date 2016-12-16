@@ -8,10 +8,10 @@
 #
 # As an additional permission under GNU GPL version 3 section 7, you may
 # distribute non-source forms of comments (lines beginning with "#") and
-# docstrings (text enclosed in triple quotation marks) in pyrcb source
-# code without the copy of the GNU GPL normally required by section 4,
-# provided you include a URL through which recipients can obtain a copy
-# of the Corresponding Source and the GPL at no charge.
+# strings (text enclosed in quotation marks) in pyrcb source code without
+# the copy of the GNU GPL normally required by section 4, provided you
+# include a URL through which recipients can obtain a copy of the
+# Corresponding Source and the GPL at no charge.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
