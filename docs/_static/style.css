@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 nickolas360 <contact@nickolas360.com>
+/* Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,36 @@ div.sphinxsidebar #searchbox form.search > div {
     display: inline-block;
 }
 
-.admonition code.xref {
+div.admonition code.xref {
     background-color: transparent;
-    border-bottom: none;
+    border-bottom-color: #eeeeee;
 }
 
 table.docutils.field-list th {
     white-space: nowrap;
+}
+
+td.field-body > p.first {
+    margin-bottom: 0;
+}
+
+div.admonition p.admonition-title {
+    display: block;
+    margin-bottom: 0.7em;
+    margin-top: 0.2em !important;
+}
+
+/* ":func:`print`" generates HTML with the class "xref", but
+ * ":func:`python:print`" doesn't, even when they both link to
+ * the same function.
+ *
+ * Add styling from "xref" to object references that are missing the class.
+ */
+a.reference.external code.docutils.literal {
+    border-bottom: 1px solid #ffffff;
+    background-color: #fbfbfb;
+}
+
+a.reference.external code.docutils.literal:hover {
+    background-color: #eeeeee;
 }
