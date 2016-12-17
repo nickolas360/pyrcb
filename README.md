@@ -3,6 +3,11 @@ pyrcb
 
 Version 1.14.2
 
+*NOTE: Development has moved to [pyrcb2]. pyrcb is no longer under active
+development, except for bug fixes.*
+
+[pyrcb2]: https://github.com/nickolas360/pyrcb2
+
 **pyrcb** is a simple, self-contained, extendable library for building IRC
 bots. It isn't a full implementation of IRC, but rather provides everything
 needed to easily create bots.
