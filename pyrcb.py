@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2016 nickolas360 <contact@nickolas360.com>
+# Copyright (C) 2015-2017 nickolas360 <contact@nickolas360.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
@@ -37,7 +37,7 @@ import traceback
 import time
 import warnings
 
-__version__ = "1.14.2"
+__version__ = "1.14.3"
 
 # ustr is unicode in Python 2 (because of unicode_literals)
 # and str in Python 3.
