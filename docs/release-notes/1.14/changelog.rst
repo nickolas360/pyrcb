@@ -1,4 +1,4 @@
-.. Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
+.. Copyright (C) 2016-2017 nickolas360 <contact@nickolas360.com>
 
 .. This file is part of pyrcb-docs, documentation for pyrcb.
 
@@ -24,6 +24,14 @@
 
 Changelog
 =========
+
+.. _changelog-1.14.3:
+
+1.14.3
+------
+
+* Fixed a syntax error in Python 2.
+* Fixed possible Unicode decoding errors.
 
 .. _changelog-1.14.2:
 
