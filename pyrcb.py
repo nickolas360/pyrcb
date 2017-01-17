@@ -37,7 +37,7 @@ import traceback
 import time
 import warnings
 
-__version__ = "1.14.3"
+__version__ = "1.14.4"
 
 # ustr is unicode in Python 2 (because of unicode_literals)
 # and str in Python 3.
