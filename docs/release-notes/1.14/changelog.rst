@@ -25,6 +25,14 @@
 Changelog
 =========
 
+.. _changelog-1.14.4:
+
+1.14.4
+------
+
+* Fixed a bug where :meth:`IRCBot.split_string` would sometimes remove too many
+  spaces.
+
 .. _changelog-1.14.3:
 
 1.14.3
