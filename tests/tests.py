@@ -68,10 +68,14 @@ class BaseBotTest(BaseTest):
         # Patched classes will return the same instance every
         # time so the instances can be inspected.
         self.mock_socket = MockSocket()
-        self.patch("ssl.SSLContext", new=MockSSLContext.get_mock_class())
+        self.patch("ssl.SSLContext.__new__",
+                   new=MockSSLContext.get_mock_class())
         self.patch("ssl.match_hostname", spec=ssl.match_hostname)
         self.patch("socket.create_connection", spec=socket.create_connection,
                    side_effect=get_mock_create_connection(self.mock_socket))
+        self.patch("ssl.create_default_context", create=True,
+                   spec=ssl.create_default_context,
+                   return_value=ssl.SSLContext())
 
     # Loads data into the bot's socket to be returned later by recv().
     def from_server(self, *lines):
@@ -424,20 +428,56 @@ class TestConnect(BaseBotTest):
         self.bot.socket.connect.assert_called_once_with(("example.com", 6667))
 
     def test_connect_ssl(self):
-        self.bot.connect("example.com", 6697, use_ssl=True)
+        # ssl.create_default_context has already been patched with a mock,
+        # so it will be restored after the test completes.
+        del ssl.create_default_context
         context = ssl.SSLContext()
+        context.load_default_certs = mock.Mock()
+        self.bot.connect("example.com", 6697, use_ssl=True)
+
+        self.assertIs(context.check_hostname, True)
+        self.assertCalledOnce(
+            context.wrap_socket, self.mock_socket,
+            server_hostname="example.com")
+        self.assertCalledOnce(context.load_default_certs)
+        self.assertIs(ssl.match_hostname.called, False)
+
+    def test_connect_ssl_ca_certs(self):
+        del ssl.create_default_context
+        context = ssl.SSLContext()
+        self.bot.connect("example.com", 6697, use_ssl=True, ca_certs="/test")
+        load_default_certs = getattr(
+            context, "load_default_certs", context.set_default_verify_paths)
+
+        self.assertCalledOnce(context.load_verify_locations, cafile="/test")
+        self.assertIs(load_default_certs.called, False)
+
+    def test_connect_ssl_match_hostname(self):
+        del ssl.create_default_context
+        context = ssl.SSLContext()
+        del context.check_hostname
+        if hasattr(context, "load_default_certs"):
+            del context.load_default_certs
+        self.bot.connect("example.com", 6697, use_ssl=True)
+        peercert = self.bot.socket.getpeercert()
+
+        self.assertIs(hasattr(context, "check_hostname"), False)
+        self.assertCalledOnce(context.wrap_socket, self.mock_socket)
+        self.assertCalledOnce(context.set_default_verify_paths)
+        self.assertCalledOnce(ssl.match_hostname, peercert, "example.com")
+
+    def test_connect_ssl_create_default_context(self):
+        context = ssl.SSLContext()
+        del context.check_hostname
+        self.bot.connect("example.com", 6697, use_ssl=True)
         peercert = self.bot.socket.getpeercert()
         load_default_certs = getattr(
             context, "load_default_certs", context.set_default_verify_paths)
 
+        self.assertIs(hasattr(context, "check_hostname"), False)
         self.assertCalledOnce(context.wrap_socket, self.mock_socket)
-        self.assertCalledOnce(load_default_certs)
+        self.assertIs(load_default_certs.called, False)
         self.assertCalledOnce(ssl.match_hostname, peercert, "example.com")
-
-    def test_connect_ssl_ca_certs(self):
-        self.bot.connect("example.com", 6697, use_ssl=True, ca_certs="/test")
-        context = ssl.SSLContext()
-        self.assertCalledOnce(context.load_verify_locations, cafile="/test")
 
     def test_register(self):
         self.bot.connect("example.com", 6667)
