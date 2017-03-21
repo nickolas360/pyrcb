@@ -25,6 +25,15 @@
 Changelog
 =========
 
+.. _changelog-1.14.5:
+
+1.14.5
+------
+
+* Better default SSL settings are now used (SSLv2 and SSLv3 are no longer
+  allowed by default).
+* Custom `ssl.SSLContext` objects may now be passed to :meth:`IRCBot.connect`.
+
 .. _changelog-1.14.4:
 
 1.14.4
